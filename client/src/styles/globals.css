@@ -1,0 +1,169 @@
+/* Jira uses system fonts */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-neutral-300;
+  }
+  body {
+    @apply bg-neutral-100 text-neutral-1000 font-sans;
+    font-size: 14px;
+    line-height: 1.42857;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-neutral-1000 font-semibold;
+    line-height: 1.2;
+  }
+}
+
+@layer components {
+  /* Jira Primary Button */
+  .btn-primary {
+    @apply bg-jira-500 hover:bg-jira-600 text-white font-medium px-3 py-1.5 rounded-jira transition-colors duration-100 text-14;
+    box-shadow: none;
+    border: none;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Jira Secondary Button */
+  .btn-secondary {
+    @apply bg-neutral-200 hover:bg-neutral-300 text-neutral-1000 font-medium px-3 py-1.5 rounded-jira transition-colors duration-100 text-14;
+    box-shadow: none;
+    border: none;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Jira Ghost Button */
+  .btn-ghost {
+    @apply hover:bg-neutral-200 text-neutral-800 font-normal px-2 py-1 rounded-jira transition-colors duration-100 text-14;
+    background: transparent;
+    border: none;
+  }
+  
+  /* Jira Card */
+  .card {
+    @apply bg-white rounded-jira shadow-jira p-4 hover:shadow-jira-hover transition-shadow duration-100;
+    border: 1px solid #dfe1e6;
+  }
+  
+  /* Jira Input Field */
+  .input-field {
+    @apply w-full px-2 py-1.5 border-2 border-neutral-300 rounded-jira focus:border-jira-500 outline-none transition-all duration-100 text-14;
+    background-color: #FAFBFC;
+    height: 32px;
+  }
+  
+  .input-field:hover {
+    @apply bg-neutral-100;
+  }
+  
+  .input-field:focus {
+    @apply bg-white;
+  }
+  
+  /* Jira Sidebar Link */
+  .sidebar-link {
+    @apply flex items-center gap-2 px-2 py-1.5 rounded-jira text-neutral-800 hover:bg-neutral-200 transition-colors duration-100 cursor-pointer text-14;
+    font-weight: 500;
+  }
+  
+  .sidebar-link-active {
+    @apply bg-jira-50 text-jira-500 font-semibold;
+  }
+  
+  /* Jira Task Card */
+  .task-card {
+    @apply bg-white p-2 rounded-jira shadow-jira-card border border-neutral-300 hover:bg-neutral-100 transition-all duration-100 cursor-pointer;
+    min-height: 80px;
+  }
+  
+  /* Jira Badge/Lozenge */
+  .badge {
+    @apply inline-flex items-center px-1.5 py-0.5 rounded-jira text-11 font-bold uppercase;
+    letter-spacing: 0.3px;
+  }
+  
+  .badge-todo {
+    @apply bg-neutral-200 text-neutral-800;
+  }
+  
+  .badge-progress {
+    @apply bg-jira-50 text-jira-700;
+  }
+  
+  .badge-done {
+    @apply bg-green-50 text-status-green;
+  }
+  
+  /* Jira Modal */
+  .modal-overlay {
+    @apply fixed inset-0 bg-neutral-1000 bg-opacity-50 flex items-center justify-center z-50;
+  }
+  
+  .modal-content {
+    @apply bg-white rounded-jira shadow-jira max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto;
+  }
+  
+  /* Jira Priority Badge */
+  .priority-badge {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded-jira text-11 font-semibold;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}

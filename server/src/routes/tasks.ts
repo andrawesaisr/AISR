@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import Task from '../models/Task';
 import { auth } from '../middleware/auth';
+import { isTaskMember, canEditTask, canCreateTask, canViewProjectTasks } from '../middleware/checkTaskAuth';
 
 const router = Router();
 
@@ -9,7 +10,7 @@ interface AuthRequest extends Request {
 }
 
 // Get all tasks for a project
-router.get('/project/:projectId', auth, async (req: Request, res: Response) => {
+router.get('/project/:projectId', auth, canViewProjectTasks, async (req: Request, res: Response) => {
   try {
     const tasks = await Task.find({ project: req.params.projectId }).populate('assignee');
     res.json(tasks);
@@ -19,7 +20,7 @@ router.get('/project/:projectId', auth, async (req: Request, res: Response) => {
 });
 
 // Get one task
-router.get('/:id', auth, async (req: Request, res: Response) => {
+router.get('/:id', auth, isTaskMember, async (req: Request, res: Response) => {
   try {
     const task = await Task.findById(req.params.id).populate('assignee');
     if (task == null) {
@@ -32,7 +33,7 @@ router.get('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // Create one task
-router.post('/', auth, async (req: AuthRequest, res: Response) => {
+router.post('/', auth, canCreateTask, async (req: AuthRequest, res: Response) => {
   const task = new Task({
     title: req.body.title,
     description: req.body.description,
@@ -53,7 +54,7 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Update one task
-router.patch('/:id', auth, async (req: Request, res: Response) => {
+router.patch('/:id', auth, canEditTask, async (req: Request, res: Response) => {
   try {
     const task = await Task.findById(req.params.id);
     if (task == null) {
@@ -84,7 +85,7 @@ router.patch('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // Delete one task
-router.delete('/:id', auth, async (req: Request, res: Response) => {
+router.delete('/:id', auth, canEditTask, async (req: Request, res: Response) => {
   try {
     const task = await Task.findById(req.params.id);
     if (task == null) {

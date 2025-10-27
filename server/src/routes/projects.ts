@@ -2,36 +2,42 @@ import { Router, Request, Response } from 'express';
 import Project from '../models/Project';
 import Organization from '../models/Organization';
 import { auth } from '../middleware/auth';
+import { isProjectMember, isProjectOwner, validateProjectOrganization } from '../middleware/checkProjectAuth';
 
 const router = Router();
 
 interface AuthRequest extends Request {
   userId?: string;
+  user?: any;
 }
 
 // Get all projects
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
-    // Find all organizations where user is a member
-    const userOrganizations = await Organization.find({
-      'members.user': req.userId,
-    }).select('_id');
-    
-    const organizationIds = userOrganizations.map(org => org._id);
+    let projects;
+    if (req.user.role === 'admin') {
+      projects = await Project.find()
+        .populate('owner')
+        .populate('members')
+        .populate('organization');
+    } else {
+      const userOrganizations = await Organization.find({
+        'members.user': req.userId,
+      }).select('_id');
+      
+      const organizationIds = userOrganizations.map(org => org._id);
 
-    // Find projects where:
-    // 1. User is owner or member, OR
-    // 2. Project belongs to an organization the user is in
-    const projects = await Project.find({
-      $or: [
-        { owner: req.userId },
-        { members: req.userId },
-        { organization: { $in: organizationIds } }
-      ]
-    })
-      .populate('owner')
-      .populate('members')
-      .populate('organization');
+      projects = await Project.find({
+        $or: [
+          { owner: req.userId },
+          { members: req.userId },
+          { organization: { $in: organizationIds } }
+        ]
+      })
+        .populate('owner')
+        .populate('members')
+        .populate('organization');
+    }
     
     res.json(projects);
   } catch (err: any) {
@@ -40,7 +46,7 @@ router.get('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Get one project
-router.get('/:id', auth, async (req: Request, res: Response) => {
+router.get('/:id', auth, isProjectMember, async (req: Request, res: Response) => {
   try {
     const project = await Project.findById(req.params.id).populate('owner').populate('members').populate('organization');
     if (project == null) {
@@ -53,7 +59,7 @@ router.get('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // Create one project
-router.post('/', auth, async (req: AuthRequest, res: Response) => {
+router.post('/', auth, validateProjectOrganization, async (req: AuthRequest, res: Response) => {
   const project = new Project({
     name: req.body.name,
     description: req.body.description,
@@ -75,7 +81,7 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Update one project
-router.patch('/:id', auth, async (req: Request, res: Response) => {
+router.patch('/:id', auth, isProjectOwner, async (req: Request, res: Response) => {
   try {
     const project = await Project.findById(req.params.id);
     if (project == null) {
@@ -110,7 +116,7 @@ router.patch('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // Delete one project
-router.delete('/:id', auth, async (req: Request, res: Response) => {
+router.delete('/:id', auth, isProjectOwner, async (req: Request, res: Response) => {
   try {
     const project = await Project.findById(req.params.id);
     if (project == null) {

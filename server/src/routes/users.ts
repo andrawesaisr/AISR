@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import User from '../models/User';
+import Task from '../models/Task';
 import { auth } from '../middleware/auth';
 
 const router = Router();
@@ -8,11 +9,21 @@ interface AuthRequest extends Request {
   userId?: string;
 }
 
-// Get all users (team members)
+// Get all users
 router.get('/', auth, async (req: Request, res: Response) => {
   try {
-    const users = await User.find({}, '-password').sort({ username: 1 });
+    const users = await User.find().select('-password');
     res.json(users);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get my tasks
+router.get('/my-tasks', auth, async (req: AuthRequest, res: Response) => {
+  try {
+    const tasks = await Task.find({ assignee: req.userId }).populate('project');
+    res.json(tasks);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
@@ -54,11 +65,11 @@ router.patch('/me', auth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Update user role (admin/manager only)
+// Update user role (admin/owner only)
 router.patch('/:id/role', auth, async (req: AuthRequest, res: Response) => {
   try {
     const currentUser = await User.findById(req.userId);
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 

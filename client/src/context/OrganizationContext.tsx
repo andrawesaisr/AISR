@@ -177,10 +177,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const acceptInvitation = async (token: string) => {
     const response = await axios.post(
       `${API_URL}/organizations/invite/${token}/accept`,
-      {},
-      getAuthHeaders()
+      {}
     );
-    await fetchOrganizations();
     return response.data.organization;
   };
 

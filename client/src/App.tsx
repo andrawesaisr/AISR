@@ -9,6 +9,7 @@ import NewProjectPage from './pages/NewProjectPage';
 import OrganizationsPage from './pages/OrganizationsPage';
 import OrganizationPage from './pages/OrganizationPage';
 import MyTasksPage from './pages/MyTasksPage';
+import DashboardPage from './pages/DashboardPage';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/layout/Layout';
 
@@ -26,6 +27,7 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/projects" element={<ProjectsPage />} />

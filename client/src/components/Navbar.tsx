@@ -3,24 +3,14 @@ import { Link } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light">
-      <div className="container-fluid">
-        <Link className="navbar-brand" to="/">AISR</Link>
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <Link className="nav-link" to="/projects">Projects</Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/login">Login</Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/register">Register</Link>
-            </li>
-          </ul>
+    <nav className="bg-gray-800 p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link to="/" className="text-white text-lg font-bold">AISR</Link>
+        <div>
+          <Link to="/projects" className="text-gray-300 hover:text-white mr-4">Projects</Link>
+          <Link to="/documents" className="text-gray-300 hover:text-white mr-4">Documents</Link>
+          <Link to="/my-tasks" className="text-gray-300 hover:text-white mr-4">My Tasks</Link>
+          <Link to="/organizations" className="text-gray-300 hover:text-white">Organizations</Link>
         </div>
       </div>
     </nav>

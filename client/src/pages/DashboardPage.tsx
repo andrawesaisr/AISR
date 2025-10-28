@@ -1,26 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FolderKanban, FileText, Presentation, Plus, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
-import { getProjects, getDocuments, getBoards, getTasksForProject } from '../services/api';
+import { FolderKanban, FileText, Plus, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
+import { getProjects, getDocuments, getTasksForProject } from '../services/api';
 
 const DashboardPage: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [boards, setBoards] = useState<any[]>([]);
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [projectsData, docsData, boardsData] = await Promise.all([
+        const [projectsData, docsData] = await Promise.all([
           getProjects(),
           getDocuments(),
-          getBoards(),
         ]);
         setProjects(projectsData);
         setDocuments(docsData);
-        setBoards(boardsData);
 
         // Fetch tasks from first project if available
         if (projectsData.length > 0) {
@@ -78,17 +75,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Boards</p>
-              <p className="text-3xl font-bold text-gray-900">{boards.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <Presentation className="text-green-600" size={24} />
-            </div>
-          </div>
-        </div>
+
 
         <div className="card">
           <div className="flex items-center justify-between">
@@ -127,15 +114,7 @@ const DashboardPage: React.FC = () => {
             </div>
           </Link>
 
-          <Link to="/boards" className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Plus className="text-green-600" size={20} />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">New Board</p>
-              <p className="text-sm text-gray-600">Create whiteboard</p>
-            </div>
-          </Link>
+
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import DocumentModel from '../models/Document';
 import Project from '../models/Project';
 import Organization from '../models/Organization';
 import { auth } from '../middleware/auth';
+import { canViewDocument, canEditDocument, canDeleteDocument, validateDocumentProject } from '../middleware/checkDocumentAuth';
 
 const router = Router();
 
@@ -10,36 +11,38 @@ const router = Router();
 router.get('/', auth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
-    
-    // Find all organizations where user is a member
-    const userOrganizations = await Organization.find({
-      'members.user': userId,
-    }).select('_id');
-    
-    const organizationIds = userOrganizations.map(org => org._id);
-    
-    // Find all projects in user's organizations
-    const organizationProjects = await Project.find({
-      organization: { $in: organizationIds }
-    }).select('_id');
-    
-    const projectIds = organizationProjects.map(proj => proj._id);
-    
-    // Find documents where:
-    // 1. User is owner or collaborator, OR
-    // 2. Document is public, OR
-    // 3. Document belongs to a project in user's organizations
-    const documents = await DocumentModel.find({
-      $or: [
-        { owner: userId },
-        { collaborators: userId },
-        { isPublic: true },
-        { project: { $in: projectIds } }
-      ]
-    })
-      .populate('owner', 'username email')
-      .populate('collaborators', 'username email')
-      .populate('project');
+    let documents;
+
+    if ((req as any).user.role === 'admin') {
+      documents = await DocumentModel.find()
+        .populate('owner', 'username email')
+        .populate('collaborators', 'username email')
+        .populate('project');
+    } else {
+      const userOrganizations = await Organization.find({
+        'members.user': userId,
+      }).select('_id');
+      
+      const organizationIds = userOrganizations.map(org => org._id);
+      
+      const organizationProjects = await Project.find({
+        organization: { $in: organizationIds }
+      }).select('_id');
+      
+      const projectIds = organizationProjects.map(proj => proj._id);
+      
+      documents = await DocumentModel.find({
+        $or: [
+          { owner: userId },
+          { collaborators: userId },
+          { isPublic: true },
+          { project: { $in: projectIds } }
+        ]
+      })
+        .populate('owner', 'username email')
+        .populate('collaborators', 'username email')
+        .populate('project');
+    }
     
     res.json(documents);
   } catch (err: any) {
@@ -48,7 +51,7 @@ router.get('/', auth, async (req: Request, res: Response) => {
 });
 
 // Get a single document
-router.get('/:id', auth, async (req: Request, res: Response) => {
+router.get('/:id', auth, canViewDocument, async (req: Request, res: Response) => {
   try {
     const document = await DocumentModel.findById(req.params.id)
       .populate('owner', 'username email')
@@ -65,7 +68,7 @@ router.get('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // Create a new document
-router.post('/', auth, async (req: Request, res: Response) => {
+router.post('/', auth, validateDocumentProject, async (req: Request, res: Response) => {
   try {
     const document = new DocumentModel({
       ...req.body,
@@ -80,7 +83,7 @@ router.post('/', auth, async (req: Request, res: Response) => {
 });
 
 // Update a document
-router.patch('/:id', auth, async (req: Request, res: Response) => {
+router.patch('/:id', auth, canEditDocument, async (req: Request, res: Response) => {
   try {
     const document = await DocumentModel.findById(req.params.id);
     
@@ -97,7 +100,7 @@ router.patch('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // Delete a document
-router.delete('/:id', auth, async (req: Request, res: Response) => {
+router.delete('/:id', auth, canDeleteDocument, async (req: Request, res: Response) => {
   try {
     const document = await DocumentModel.findById(req.params.id);
     

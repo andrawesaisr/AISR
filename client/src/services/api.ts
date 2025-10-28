@@ -45,12 +45,25 @@ export const createProject = async (project: { name: string, description: string
 };
 
 // Tasks
+export const getMyTasks = async () => {
+  const res = await api.get('/users/my-tasks');
+  return res.data;
+};
+
 export const getTasksForProject = async (projectId: string) => {
   const res = await api.get(`/tasks/project/${projectId}`);
   return res.data;
 };
 
-export const createTask = async (task: { title: string, description: string, project: string }) => {
+export const createTask = async (task: { 
+  title: string, 
+  description: string, 
+  project: string,
+  assignee?: string,
+  priority?: string,
+  status?: string,
+  dueDate?: Date
+}) => {
   const res = await api.post('/tasks', task);
   return res.data;
 };
@@ -91,31 +104,7 @@ export const deleteDocument = async (id: string) => {
   return res.data;
 };
 
-// Boards
-export const getBoards = async () => {
-  const res = await api.get('/boards');
-  return res.data;
-};
 
-export const getBoard = async (id: string) => {
-  const res = await api.get(`/boards/${id}`);
-  return res.data;
-};
-
-export const createBoard = async (board: { name: string, description?: string, project?: string }) => {
-  const res = await api.post('/boards', board);
-  return res.data;
-};
-
-export const updateBoard = async (id: string, board: any) => {
-  const res = await api.patch(`/boards/${id}`, board);
-  return res.data;
-};
-
-export const deleteBoard = async (id: string) => {
-  const res = await api.delete(`/boards/${id}`);
-  return res.data;
-};
 
 // Comments
 export const getCommentsForTask = async (taskId: string) => {

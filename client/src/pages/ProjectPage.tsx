@@ -562,6 +562,13 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
             )}
           </div>
         </div>
+        {task.assignee && (
+          <div className="flex items-center gap-1" title={`Assigned to ${task.assignee.username}`}>
+            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+              {task.assignee.username.charAt(0).toUpperCase()}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

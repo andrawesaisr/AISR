@@ -27,48 +27,40 @@ const HomePage: React.FC = () => {
           Your All-in-One
           <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"> Workspace</span>
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Combine the power of Jira, Notion, and Miro in one beautiful platform. 
-          Manage projects, create documents, and collaborate on whiteboards - all in one place.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link to="/register" className="btn-primary text-lg px-8 py-3">
-            Start Free Trial
-          </Link>
-          <Link to="/login" className="btn-secondary text-lg px-8 py-3">
-            Sign In
-          </Link>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <h2 className="text-4xl font-bold text-center mb-16">Everything you need, nothing you don't</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="card text-center">
-            <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <FolderKanban className="text-primary-600" size={32} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Project Management</h3>
-            <p className="text-gray-600">Kanban boards, task tracking, and team collaboration like Jira</p>
-          </div>
-          <div className="card text-center">
-            <div className="w-16 h-16 bg-secondary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <FileText className="text-secondary-600" size={32} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Rich Documents</h3>
-            <p className="text-gray-600">Create beautiful docs and wikis with a Notion-style editor</p>
-          </div>
-          <div className="card text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Presentation className="text-green-600" size={32} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Visual Boards</h3>
-            <p className="text-gray-600">Brainstorm and visualize ideas on Miro-style whiteboards</p>
-          </div>
-        </div>
-      </section>
-
+                  <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                  Combine the power of Jira and Notion in one beautiful platform. 
+                  Manage projects and create documents - all in one place.
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <Link to="/register" className="btn-primary text-lg px-8 py-3">
+                    Start Free Trial
+                  </Link>
+                  <Link to="/login" className="btn-secondary text-lg px-8 py-3">
+                    Sign In
+                  </Link>
+                </div>
+              </section>
+        
+              {/* Features */}
+              <section className="max-w-7xl mx-auto px-6 py-20">
+                <h2 className="text-4xl font-bold text-center mb-16">Everything you need, nothing you don't</h2>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="card text-center">
+                    <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <FolderKanban className="text-primary-600" size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3">Project Management</h3>
+                    <p className="text-gray-600">Task tracking and team collaboration like Jira</p>
+                  </div>
+                  <div className="card text-center">
+                    <div className="w-16 h-16 bg-secondary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <FileText className="text-secondary-600" size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3">Rich Documents</h3>
+                    <p className="text-gray-600">Create beautiful docs and wikis with a Notion-style editor</p>
+                  </div>
+                </div>
+              </section>
       {/* Benefits */}
       <section className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-6">

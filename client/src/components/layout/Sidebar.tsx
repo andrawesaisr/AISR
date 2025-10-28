@@ -21,7 +21,7 @@ const Sidebar: React.FC = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/projects', icon: FolderKanban, label: 'Projects' },
     { path: '/documents', icon: FileText, label: 'Documents' },
-    { path: '/boards', icon: Presentation, label: 'Boards' },
+
     { path: '/organizations', icon: Building2, label: 'Organizations' },
     { path: '/team', icon: Users, label: 'Team' },
   ];

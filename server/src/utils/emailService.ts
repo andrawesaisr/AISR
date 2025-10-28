@@ -71,7 +71,6 @@ export const sendInvitationEmail = async (data: InvitationEmailData): Promise<bo
               <ul>
                 <li>📋 Issue tracking & sprint management</li>
                 <li>📝 Rich document collaboration</li>
-                <li>🎨 Visual whiteboards</li>
                 <li>🤝 Team collaboration</li>
               </ul>
               
@@ -102,8 +101,7 @@ ${data.inviterName} has invited you to join ${data.organizationName} on AISR as 
 
 AISR is an all-in-one project management platform combining:
 - Issue tracking & sprint management
-- Rich document collaboration  
-- Visual whiteboards
+- Rich document collaboration
 - Team collaboration
 
 Accept your invitation by visiting:

@@ -4,22 +4,32 @@ import Organization from '../models/Organization';
 import User from '../models/User';
 import { auth } from '../middleware/auth';
 import { sendInvitationEmail } from '../utils/emailService';
+import { isAdmin, isOwner, isMember } from '../middleware/roles';
 
 const router = Router();
 
 interface AuthRequest extends Request {
   userId?: string;
+  user?: any;
 }
 
 // Get all organizations for current user
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
-    const organizations = await Organization.find({
-      'members.user': req.userId,
-    })
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password')
-      .populate('invitations.invitedBy', '-password');
+    let organizations;
+    if (req.user.role === 'admin') {
+      organizations = await Organization.find()
+        .populate('createdBy', '-password')
+        .populate('members.user', '-password')
+        .populate('invitations.invitedBy', '-password');
+    } else {
+      organizations = await Organization.find({
+        'members.user': req.userId,
+      })
+        .populate('createdBy', '-password')
+        .populate('members.user', '-password')
+        .populate('invitations.invitedBy', '-password');
+    }
     
     // Filter out members with null user references for each organization
     organizations.forEach(org => {
@@ -33,7 +43,7 @@ router.get('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Get one organization
-router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
+router.get('/:id', auth, isMember, async (req: AuthRequest, res: Response) => {
   try {
     const organization = await Organization.findById(req.params.id)
       .populate('createdBy', '-password')
@@ -94,7 +104,7 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Update organization
-router.patch('/:id', auth, async (req: AuthRequest, res: Response) => {
+router.patch('/:id', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
     const organization = await Organization.findById(req.params.id);
     
@@ -132,7 +142,7 @@ router.patch('/:id', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Delete organization
-router.delete('/:id', auth, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
     const organization = await Organization.findById(req.params.id);
     
@@ -160,7 +170,7 @@ router.delete('/:id', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Invite member to organization
-router.post('/:id/invite', auth, async (req: AuthRequest, res: Response) => {
+router.post('/:id/invite', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
     const { email, role } = req.body;
 
@@ -389,7 +399,7 @@ router.get('/invite/:token', async (req: Request, res: Response) => {
 });
 
 // Remove member from organization
-router.delete('/:id/members/:userId', auth, async (req: AuthRequest, res: Response) => {
+router.delete('/:id/members/:userId', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
     const organization = await Organization.findById(req.params.id);
     
@@ -436,7 +446,7 @@ router.delete('/:id/members/:userId', auth, async (req: AuthRequest, res: Respon
 });
 
 // Update member role
-router.patch('/:id/members/:userId/role', auth, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/members/:userId/role', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
     const { role } = req.body;
 
@@ -490,7 +500,7 @@ router.patch('/:id/members/:userId/role', auth, async (req: AuthRequest, res: Re
 });
 
 // Cancel invitation
-router.delete('/:id/invitations/:invitationId', auth, async (req: AuthRequest, res: Response) => {
+router.delete('/:id/invitations/:invitationId', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
     const organization = await Organization.findById(req.params.id);
     

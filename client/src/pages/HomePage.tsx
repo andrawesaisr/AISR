@@ -1,117 +1,196 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FolderKanban, FileText, Presentation, Zap, Users, Shield } from 'lucide-react';
+import {
+  FolderKanban,
+  FileText,
+  Presentation,
+  Zap,
+  Users,
+  Shield,
+  Target,
+  Sparkles,
+} from 'lucide-react';
 
 const HomePage: React.FC = () => {
+  const features = [
+    {
+      icon: FolderKanban,
+      title: 'Modern project hub',
+      description: 'Plan sprints, track blockers, and keep work visible across teams.',
+    },
+    {
+      icon: FileText,
+      title: 'Living documentation',
+      description: 'Capture notes, specs, and decisions so context is always one click away.',
+    },
+    {
+      icon: Presentation,
+      title: 'Aligned roadmaps',
+      description: 'Connect strategy to delivery with timelines and progress summaries.',
+    },
+  ];
+
+  const highlights = [
+    { label: 'Teams onboarded', value: '150+' },
+    { label: 'Docs created monthly', value: '12k' },
+    { label: 'Avg. time saved per sprint', value: '18 hrs' },
+  ];
+
+  const pillars = [
+    {
+      icon: Zap,
+      title: 'Fast by design',
+      description: 'Snappy boards, instant search, and zero friction workflows keep teams moving.',
+    },
+    {
+      icon: Users,
+      title: 'Built for collaboration',
+      description: 'Share context, leave updates, and co-create documents without losing focus.',
+    },
+    {
+      icon: Shield,
+      title: 'Enterprise-grade security',
+      description: 'Granular roles, SSO, and audit trails ensure every data point stays protected.',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">A</span>
+    <div className="min-h-screen bg-neutral-100 text-neutral-1000">
+      <header className="sticky top-0 z-40 border-b border-neutral-300 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-jira-500 to-status-purple text-white font-semibold">
+              A
             </div>
-            <span className="text-2xl font-bold text-gray-900">AISR</span>
-          </div>
-          <div className="flex gap-4">
-            <Link to="/login" className="btn-ghost">Login</Link>
-            <Link to="/register" className="btn-primary">Get Started</Link>
-          </div>
+            <span className="text-20 font-semibold tracking-tight">AISR</span>
+          </Link>
+          <nav className="flex items-center gap-3">
+            <Link to="/login" className="btn-ghost text-14">
+              Log in
+            </Link>
+            <Link to="/register" className="btn-primary text-14 px-4">
+              Get started
+            </Link>
+          </nav>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-6xl font-bold text-gray-900 mb-6">
-          Your All-in-One
-          <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"> Workspace</span>
-        </h1>
-                  <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                  Combine the power of Jira and Notion in one beautiful platform. 
-                  Manage projects and create documents - all in one place.
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Link to="/register" className="btn-primary text-lg px-8 py-3">
-                    Start Free Trial
-                  </Link>
-                  <Link to="/login" className="btn-secondary text-lg px-8 py-3">
-                    Sign In
-                  </Link>
-                </div>
-              </section>
-        
-              {/* Features */}
-              <section className="max-w-7xl mx-auto px-6 py-20">
-                <h2 className="text-4xl font-bold text-center mb-16">Everything you need, nothing you don't</h2>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="card text-center">
-                    <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <FolderKanban className="text-primary-600" size={32} />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">Project Management</h3>
-                    <p className="text-gray-600">Task tracking and team collaboration like Jira</p>
-                  </div>
-                  <div className="card text-center">
-                    <div className="w-16 h-16 bg-secondary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <FileText className="text-secondary-600" size={32} />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">Rich Documents</h3>
-                    <p className="text-gray-600">Create beautiful docs and wikis with a Notion-style editor</p>
-                  </div>
-                </div>
-              </section>
-      {/* Benefits */}
-      <section className="bg-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-16">Why teams love AISR</h2>
-          <div className="grid md:grid-cols-3 gap-12">
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Zap className="text-primary-600" size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold mb-2">Lightning Fast</h3>
-                <p className="text-gray-600">Built for speed with modern technology</p>
-              </div>
+      <main className="space-y-24 pb-24">
+        <section className="relative overflow-hidden bg-gradient-to-br from-jira-600 via-jira-500 to-status-purple py-24 text-white">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
+          <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-10 px-6 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-12 font-semibold uppercase tracking-[0.3em] text-white/70">
+              <Sparkles size={14} />
+              Workspace OS
+            </span>
+            <h1 className="text-4xl font-semibold leading-tight md:text-6xl md:leading-tight">
+              Align strategy, execution, and knowledge in one shared flow.
+            </h1>
+            <p className="max-w-2xl text-lg text-white/80 md:text-xl">
+              AISR brings the best of Jira and Notion together so teams can orchestrate projects and capture context without switching tools.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/register" className="btn-primary min-w-[180px] justify-center text-14 font-semibold">
+                Start free
+              </Link>
+              <Link
+                to="/login"
+                className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-jira border border-white/50 px-4 py-2 text-14 font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                View demo
+                <Target size={16} />
+              </Link>
             </div>
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Users className="text-secondary-600" size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold mb-2">Real-time Collaboration</h3>
-                <p className="text-gray-600">Work together seamlessly with your team</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Shield className="text-green-600" size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold mb-2">Secure & Private</h3>
-                <p className="text-gray-600">Your data is encrypted and protected</p>
-              </div>
+            <div className="grid w-full gap-6 rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm sm:grid-cols-3">
+              {highlights.map((highlight) => (
+                <div key={highlight.label} className="rounded-2xl bg-white/10 p-4 text-left">
+                  <p className="text-3xl font-semibold text-white">{highlight.value}</p>
+                  <p className="mt-1 text-sm text-white/70">{highlight.label}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA */}
-      <section className="max-w-7xl mx-auto px-6 py-20 text-center">
-        <div className="bg-gradient-to-br from-primary-600 to-secondary-600 rounded-3xl p-16 text-white">
-          <h2 className="text-4xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-xl mb-8 opacity-90">Join thousands of teams already using AISR</p>
-          <Link to="/register" className="inline-block bg-white text-primary-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors">
-            Create Free Account
-          </Link>
-        </div>
-      </section>
+        <section className="mx-auto max-w-6xl px-6">
+          <div className="mb-12 text-center">
+            <h2 className="section-title">Everything teams need to stay aligned</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-14 text-neutral-700">
+              Plan, discuss, and document with a unified toolkit. Each surface is designed to keep velocity high without sacrificing clarity.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.title}
+                  className="card h-full rounded-2xl border border-neutral-200 bg-white/80 p-6 shadow-soft transition-transform duration-150 hover:-translate-y-1"
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-jira-50 text-jira-600">
+                    <Icon size={24} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-neutral-1000">{feature.title}</h3>
+                  <p className="mt-2 text-sm text-neutral-700">{feature.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-gray-600">
-          <p>&copy; 2024 AISR. All rights reserved.</p>
+        <section className="bg-white py-20">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="mb-12 text-center">
+              <h2 className="section-title">Why teams switch to AISR</h2>
+              <p className="mx-auto mt-2 max-w-2xl text-14 text-neutral-700">
+                Designed for scale, loved by fast-moving squads. AISR removes silos so work and knowledge live side by side.
+              </p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-3">
+              {pillars.map((pillar) => {
+                const Icon = pillar.icon;
+                return (
+                  <div
+                    key={pillar.title}
+                    className="rounded-2xl border border-neutral-200 bg-neutral-100 p-6 transition hover:bg-neutral-0"
+                  >
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-jira-50 text-jira-600">
+                      <Icon size={24} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-neutral-1000">{pillar.title}</h3>
+                    <p className="mt-2 text-sm text-neutral-700">{pillar.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-6 text-center">
+          <div className="rounded-3xl bg-gradient-to-br from-jira-600 via-jira-500 to-status-purple p-16 text-white shadow-soft">
+            <h2 className="text-3xl font-semibold md:text-4xl">Ready to give teams a shared source of truth?</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
+              Launch a collaborative workspace where projects, documents, and conversations live together.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link to="/register" className="btn-primary min-w-[180px] justify-center text-14 font-semibold">
+                Create free account
+              </Link>
+              <Link
+                to="/login"
+                className="inline-flex min-w-[180px] items-center justify-center rounded-jira border border-white/60 px-4 py-2 text-14 font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-neutral-300 bg-white py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-1 px-6 text-12 text-neutral-600">
+          <p>&copy; {new Date().getFullYear()} AISR. All rights reserved.</p>
+          <p>Made for teams who care about velocity and clarity.</p>
         </div>
       </footer>
     </div>

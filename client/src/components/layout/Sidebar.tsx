@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FolderKanban, 
@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, isAuthenticated } = useAuth();
 
   const navItems = [
@@ -50,7 +51,7 @@ const Sidebar: React.FC = () => {
       {/* Quick Actions - Jira Style */}
       <div className="px-3 py-2 border-b border-neutral-300">
         <Link 
-          to="/projects/new" 
+          to="/new-project" 
           className="btn-primary w-full gap-1 text-12"
         >
           <Plus size={16} />
@@ -83,7 +84,10 @@ const Sidebar: React.FC = () => {
           <span className="text-14">Settings</span>
         </Link>
         <button 
-          onClick={logout}
+          onClick={() => {
+            logout();
+            navigate('/');
+          }}
           className="sidebar-link w-full text-left text-status-red hover:bg-red-50"
         >
           <LogOut size={16} />

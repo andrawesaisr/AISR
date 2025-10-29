@@ -5,6 +5,7 @@ import { useOrganization } from '../context/OrganizationContext';
 import { useAuth } from '../context/AuthContext';
 import { Building2, Mail, CheckCircle, XCircle, Clock, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import LoadingState from '../components/LoadingState';
 
 const API_URL =  'http://localhost:5001';
 
@@ -158,11 +159,7 @@ const InvitePage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingState label="Validating invitation..." />;
   }
 
   if (error) {

@@ -148,7 +148,7 @@ export const validateDocumentProject = async (req: AuthRequest, res: Response, n
       if (req.user.role === 'owner' || req.user.role === 'admin') {
         return next();
       }
-      return res.status(403).json({ message: 'Only owners can create documents' });
+      return res.status(403).json({ message: 'Only owners or admins can create documents' });
     }
 
     const project = await Project.findById(projectId);

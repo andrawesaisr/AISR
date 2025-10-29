@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOrganization } from '../context/OrganizationContext';
 import { 
   Building2, 
+  ArrowLeft,
   Users, 
   Mail, 
   UserPlus, 
-  Settings, 
   Trash2, 
   Crown,
   Shield,
@@ -14,8 +14,13 @@ import {
   Copy,
   Check,
   X,
-  Clock
+  Clock,
+  ClipboardList,
 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import StatCard from '../components/StatCard';
+import LoadingState from '../components/LoadingState';
+import EmptyState from '../components/EmptyState';
 
 const OrganizationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +40,24 @@ const OrganizationPage: React.FC = () => {
   const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const stats = useMemo(() => {
+    if (!currentOrganization) {
+      return { memberCount: 0, adminCount: 0, pendingInvites: 0 };
+    }
+    const memberCount = currentOrganization.members.filter((member: any) => member.user).length;
+    const adminCount = currentOrganization.members.filter(
+      (member: any) => member.user && (member.role === 'admin' || member.role === 'owner')
+    ).length;
+    const pendingInvites = currentOrganization.invitations.filter((inv: any) => inv.status === 'pending').length;
+    return { memberCount, adminCount, pendingInvites };
+  }, [currentOrganization]);
+
+  const pendingInvitations = useMemo(
+    () =>
+      currentOrganization?.invitations.filter((inv: any) => inv.status === 'pending') || [],
+    [currentOrganization]
+  );
 
   useEffect(() => {
     if (id) {
@@ -115,26 +138,22 @@ const OrganizationPage: React.FC = () => {
   };
 
   if (loading && !currentOrganization) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingState label="Loading organization..." />;
   }
 
   if (!currentOrganization) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Organization not found</h2>
-          <button
-            onClick={() => navigate('/organizations')}
-            className="mt-4 text-blue-500 hover:text-blue-700"
-          >
-            Back to Organizations
+      <EmptyState
+        icon={Building2}
+        title="Organization not found"
+        description="This organization may have been removed or you might not have access."
+        action={
+          <button onClick={() => navigate('/organizations')} className="btn-primary flex items-center gap-2">
+            <ArrowLeft size={16} />
+            Back to organizations
           </button>
-        </div>
-      </div>
+        }
+      />
     );
   }
 
@@ -144,89 +163,111 @@ const OrganizationPage: React.FC = () => {
   const canManageMembers = userMember?.role === 'owner' || userMember?.role === 'admin';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-br from-blue-500 to-purple-500 p-4 rounded-lg">
-              <Building2 size={32} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{currentOrganization.name}</h1>
-              {currentOrganization.description && (
-                <p className="text-gray-600 mt-1">{currentOrganization.description}</p>
-              )}
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm text-gray-500">Your role:</span>
-                <span className="flex items-center gap-1 text-sm font-medium capitalize">
-                  {getRoleIcon(userMember?.role || 'member')}
-                  {userMember?.role}
-                </span>
-              </div>
-            </div>
-          </div>
-          {canInvite && (
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-            >
-              <UserPlus size={20} />
-              Invite Member
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
+      <PageHeader
+        title={currentOrganization.name}
+        subtitle={
+          currentOrganization.description ||
+          'Organize teams, share projects, and manage collaboration.'
+        }
+        actions={
+          canInvite ? (
+            <button onClick={() => setShowInviteModal(true)} className="btn-primary flex items-center gap-2">
+              <UserPlus size={18} />
+              Invite member
             </button>
-          )}
+          ) : undefined
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2 text-11 text-neutral-600">
+          <span className="pill bg-neutral-200 text-neutral-700">
+            {getRoleIcon(userMember?.role || 'member')}
+            {userMember?.role || 'member'}
+          </span>
+          <span className="pill bg-neutral-200 text-neutral-700">
+            Created {new Date(currentOrganization.createdAt).toLocaleDateString()}
+          </span>
         </div>
+      </PageHeader>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          title="Members"
+          value={stats.memberCount}
+          icon={Users}
+          tone="blue"
+          description="Active collaborators in this org."
+        />
+        <StatCard
+          title="Admins & owners"
+          value={stats.adminCount}
+          icon={Shield}
+          tone="purple"
+          description="People who can manage access."
+        />
+        <StatCard
+          title="Pending invites"
+          value={stats.pendingInvites}
+          icon={ClipboardList}
+          tone="amber"
+          description="Awaiting acceptance."
+        />
       </div>
 
       {/* Members Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Users size={24} />
-          Members ({currentOrganization.members.length})
-        </h2>
-        <div className="space-y-3">
-          {currentOrganization.members.filter(member => member.user).map((member) => (
+      <div className="rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-soft">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-18 font-semibold text-neutral-1000">
+              Members ({stats.memberCount})
+            </h2>
+            <p className="text-12 text-neutral-600">
+              Manage access and keep everyone aligned on responsibilities.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 space-y-3">
+          {currentOrganization.members.filter((member: any) => member.user).map((member: any) => (
             <div
               key={member.user._id}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-100"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-13 font-semibold text-white">
                   {member.user.username.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{member.user.username}</span>
+                    <span className="text-14 font-semibold text-neutral-1000">{member.user.username}</span>
                     {getRoleIcon(member.role)}
                   </div>
-                  <span className="text-sm text-gray-500">{member.user.email}</span>
+                  <p className="text-12 text-neutral-600">{member.user.email}</p>
                   {member.user.jobTitle && (
-                    <span className="text-xs text-gray-400 block">{member.user.jobTitle}</span>
+                    <p className="text-11 text-neutral-500">{member.user.jobTitle}</p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {canManageMembers && member.role !== 'owner' && (
+                {canManageMembers && member.role !== 'owner' ? (
                   <>
                     <select
                       value={member.role}
                       onChange={(e) => handleUpdateRole(member.user._id, e.target.value as 'admin' | 'member')}
-                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
                     </select>
                     <button
                       onClick={() => handleRemoveMember(member.user._id, member.user.username)}
-                      className="text-red-500 hover:text-red-700 p-2"
+                      className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   </>
-                )}
-                {member.role === 'owner' && (
-                  <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">
-                    Owner
+                ) : (
+                  <span className="pill bg-neutral-200 text-neutral-700 capitalize">
+                    {member.role}
                   </span>
                 )}
               </div>
@@ -235,115 +276,129 @@ const OrganizationPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Pending Invitations */}
-      {currentOrganization.invitations.filter(inv => inv.status === 'pending').length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Mail size={24} />
-            Pending Invitations ({currentOrganization.invitations.filter(inv => inv.status === 'pending').length})
-          </h2>
-          <div className="space-y-3">
-            {currentOrganization.invitations
-              .filter(inv => inv.status === 'pending')
-              .map((invitation) => (
-                <div
-                  key={invitation._id}
-                  className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200"
-                >
-                  <div className="flex items-center gap-3">
-                    <Mail size={20} className="text-yellow-600" />
-                    <div>
-                      <div className="font-medium text-gray-900">{invitation.email}</div>
-                      <div className="text-sm text-gray-500">
-                        Invited by {invitation.invitedBy.username} • {invitation.role}
-                      </div>
-                      <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                        <Clock size={12} />
-                        Expires {new Date(invitation.expiresAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                  {canManageMembers && (
-                    <button
-                      onClick={() => handleCancelInvitation(invitation._id, invitation.email)}
-                      className="text-red-500 hover:text-red-700 p-2"
-                    >
-                      <X size={18} />
-                    </button>
-                  )}
+      {pendingInvitations.length > 0 && (
+        <div className="rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-soft">
+          <div className="flex items-center gap-3">
+            <Mail size={20} className="text-status-yellow" />
+            <div>
+              <h2 className="text-18 font-semibold text-neutral-1000">
+                Pending invitations ({pendingInvitations.length})
+              </h2>
+              <p className="text-12 text-neutral-600">
+                These invites are waiting to be accepted.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            {pendingInvitations.map((invitation: any) => (
+              <div
+                key={invitation._id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-yellow-200 bg-yellow-50/80 px-4 py-3"
+              >
+                <div>
+                  <p className="text-13 font-semibold text-neutral-1000">{invitation.email}</p>
+                  <p className="text-12 text-neutral-600">
+                    Invited by {invitation.invitedBy.username} • {invitation.role}
+                  </p>
+                  <p className="flex items-center gap-1 text-11 text-neutral-500">
+                    <Clock size={12} />
+                    Expires {new Date(invitation.expiresAt).toLocaleDateString()}
+                  </p>
                 </div>
-              ))}
+                {canManageMembers && (
+                  <button
+                    onClick={() => handleCancelInvitation(invitation._id, invitation.email)}
+                    className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6">Invite Member</h2>
-            
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowInviteModal(false);
+            setInviteEmail('');
+            setInviteRole('member');
+            setInviteLink(null);
+            setCopied(false);
+          }}
+        >
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-neutral-200 px-6 py-5">
+              <h2 className="text-24 font-semibold text-neutral-1000">Invite member</h2>
+              <p className="mt-1 text-12 text-neutral-600">
+                Send an invite to bring teammates into this organization.
+              </p>
+            </div>
             {inviteLink ? (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Email is not configured. Share this invitation link with the person you want to invite:
+              <div className="space-y-4 px-6 py-6">
+                <p className="text-12 text-neutral-600">
+                  Email configuration is unavailable. Share this link directly with the person you’d like to invite.
                 </p>
-                <div className="bg-gray-50 p-4 rounded-lg mb-4 break-all text-sm">
+                <div className="rounded-2xl border border-neutral-300 bg-neutral-100 p-4 text-12 break-all">
                   {inviteLink}
                 </div>
-                <button
-                  onClick={handleCopyLink}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition mb-3"
-                >
-                  {copied ? <Check size={20} /> : <Copy size={20} />}
-                  {copied ? 'Copied!' : 'Copy Link'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowInviteModal(false);
-                    setInviteEmail('');
-                    setInviteRole('member');
-                    setInviteLink(null);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Close
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleCopyLink} className="btn-primary flex flex-1 items-center justify-center gap-2">
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'Copied!' : 'Copy link'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowInviteModal(false);
+                      setInviteEmail('');
+                      setInviteRole('member');
+                      setInviteLink(null);
+                      setCopied(false);
+                    }}
+                    className="btn-secondary flex-1"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             ) : (
-              <form onSubmit={handleInviteMember}>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
+              <form onSubmit={handleInviteMember} className="space-y-5 px-6 py-6">
+                <div>
+                  <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                    Email address *
                   </label>
                   <input
                     type="email"
                     required
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
                     placeholder="colleague@example.com"
                   />
                 </div>
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div>
+                  <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
                     Role *
                   </label>
                   <select
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
                   >
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {inviteRole === 'admin' 
-                      ? 'Admins can invite and manage members' 
-                      : 'Members can view and collaborate'}
+                  <p className="mt-1 text-11 text-neutral-600">
+                    {inviteRole === 'admin'
+                      ? 'Admins can invite new members and manage roles.'
+                      : 'Members can collaborate on projects and documents.'}
                   </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -351,15 +406,13 @@ const OrganizationPage: React.FC = () => {
                       setInviteEmail('');
                       setInviteRole('member');
                     }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                    className="btn-secondary"
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                  >
-                    Send Invitation
+                  <button type="submit" className="btn-primary flex items-center gap-2">
+                    <Mail size={16} />
+                    Send invitation
                   </button>
                 </div>
               </form>

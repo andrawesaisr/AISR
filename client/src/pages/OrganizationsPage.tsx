@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../context/OrganizationContext';
-import { Building2, Plus, Users, Calendar, Settings, Trash2 } from 'lucide-react';
+import { Building2, Plus, Users, Calendar, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import StatCard from '../components/StatCard';
+import LoadingState from '../components/LoadingState';
+import EmptyState from '../components/EmptyState';
 
 const OrganizationsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +15,17 @@ const OrganizationsPage: React.FC = () => {
     name: '',
     description: '',
   });
+
+  const stats = useMemo(() => {
+    const total = organizations.length;
+    const totalMembers = organizations.reduce((sum, org) => sum + org.members.length, 0);
+    const pendingInvites = organizations.reduce(
+      (sum, org) => sum + (org.invitations || []).filter((inv: any) => inv.status === 'pending').length,
+      0
+    );
+    const avgMembers = total === 0 ? 0 : Math.round(totalMembers / total);
+    return { total, totalMembers, pendingInvites, avgMembers };
+  }, [organizations]);
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,63 +50,80 @@ const OrganizationsPage: React.FC = () => {
   };
 
   if (loading && organizations.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingState label="Loading organizations..." />;
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
-          <p className="text-gray-600 mt-1">Manage your teams and collaborate</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-        >
-          <Plus size={20} />
-          Create Organization
-        </button>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
+      <PageHeader
+        title="Organizations"
+        subtitle="Group people, manage membership, and share workspaces across teams."
+        actions={
+          <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={18} />
+            New organization
+          </button>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          title="Organizations"
+          value={stats.total}
+          icon={Building2}
+          tone="blue"
+          description="Spaces you collaborate in."
+        />
+        <StatCard
+          title="Total members"
+          value={stats.totalMembers}
+          icon={Users}
+          tone="purple"
+          description={`Avg ${stats.avgMembers || 0} per org.`}
+        />
+        <StatCard
+          title="Pending invites"
+          value={stats.pendingInvites}
+          icon={Plus}
+          tone="amber"
+          description="Awaiting acceptance."
+        />
       </div>
 
-      {/* Organizations Grid */}
       {organizations.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No organizations yet</h3>
-          <p className="text-gray-500 mb-6">Create your first organization to start collaborating</p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
-          >
-            Create Organization
-          </button>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title="No organizations yet"
+          description="Spin up an organization to invite teammates and share projects."
+          action={
+            <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
+              <Plus size={18} />
+              Create organization
+            </button>
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {organizations.map((org) => {
-            const userMember = org.members.find(m => m.user._id);
+            const userMember = org.members.find((member: any) => member.user?._id);
             const isOwner = userMember?.role === 'owner';
-            
+
             return (
               <div
                 key={org._id}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 cursor-pointer border border-gray-200"
                 onClick={() => navigate(`/organizations/${org._id}`)}
+                className="group flex h-full flex-col justify-between rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-jira transition hover:-translate-y-1 hover:shadow-jira-hover cursor-pointer"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-br from-blue-500 to-purple-500 p-3 rounded-lg">
-                      <Building2 size={24} className="text-white" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-jira-500 to-status-purple text-white">
+                      <Building2 size={22} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{org.name}</h3>
-                      <span className="text-xs text-gray-500 capitalize">{userMember?.role}</span>
+                      <h3 className="text-lg font-semibold text-neutral-1000">{org.name}</h3>
+                      <span className="text-11 uppercase tracking-wide text-neutral-600">
+                        {userMember?.role || 'member'}
+                      </span>
                     </div>
                   </div>
                   {isOwner && (
@@ -100,26 +132,24 @@ const OrganizationsPage: React.FC = () => {
                         e.stopPropagation();
                         handleDeleteOrganization(org._id, org.name);
                       }}
-                      className="text-red-500 hover:text-red-700 p-1"
+                      className="rounded-xl border border-red-200 p-2 text-status-red opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   )}
                 </div>
-
                 {org.description && (
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{org.description}</p>
+                  <p className="mt-4 text-13 text-neutral-700 line-clamp-3">{org.description}</p>
                 )}
-
-                <div className="flex items-center gap-4 text-sm text-gray-500 border-t pt-4">
-                  <div className="flex items-center gap-1">
-                    <Users size={16} />
-                    <span>{org.members.length} members</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar size={16} />
-                    <span>{new Date(org.createdAt).toLocaleDateString()}</span>
-                  </div>
+                <div className="mt-6 flex items-center justify-between text-12 text-neutral-600">
+                  <span className="pill bg-neutral-200 text-neutral-700">
+                    <Users size={12} />
+                    {org.members.length} member{org.members.length === 1 ? '' : 's'}
+                  </span>
+                  <span className="pill bg-neutral-200 text-neutral-700">
+                    <Calendar size={12} />
+                    {new Date(org.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             );
@@ -127,52 +157,53 @@ const OrganizationsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Organization Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6">Create Organization</h2>
-            <form onSubmit={handleCreateOrganization}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organization Name *
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-neutral-200 px-6 py-5">
+              <h2 className="text-24 font-semibold text-neutral-1000">Create organization</h2>
+              <p className="mt-1 text-12 text-neutral-600">
+                Give your team a shared space for projects, docs, and rituals.
+              </p>
+            </div>
+            <form onSubmit={handleCreateOrganization} className="space-y-5 px-6 py-6">
+              <div>
+                <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  Organization name *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
                   placeholder="Acme Inc."
                 />
               </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
                   Description
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="What does your organization do?"
+                  className="input-field min-h-[120px] rounded-xl border-2 border-neutral-300 bg-neutral-100 py-3 focus:bg-white"
+                  placeholder="What does your organization focus on?"
                 />
               </div>
-              <div className="flex gap-3">
+              <div className="flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
                     setFormData({ name: '', description: '' });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                >
+                <button type="submit" className="btn-primary flex items-center gap-2">
+                  <Plus size={16} />
                   Create
                 </button>
               </div>

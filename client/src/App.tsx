@@ -16,7 +16,7 @@ import Layout from './components/layout/Layout';
 import { OrganizationProvider } from './context/OrganizationContext';
 import DocumentPage from './pages/DocumentPage';
 import DocumentsPage from './pages/DocumentsPage';
-
+import TeamPage from './pages/TeamPage';
 import InvitePage from './pages/InvitePage';
 
 function App() {
@@ -38,6 +38,7 @@ function App() {
               <Route path="/my-tasks" element={<MyTasksPage />} />
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/documents/:id" element={<DocumentPage />} />
+              <Route path="/team" element={<TeamPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
             </Routes>
           </Layout>

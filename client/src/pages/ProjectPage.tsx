@@ -1,11 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, LayoutGrid, List, Calendar, MessageSquare, Trash2, GripVertical } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  LayoutGrid,
+  List,
+  Calendar,
+  MessageSquare,
+  Trash2,
+  GripVertical,
+  ClipboardList,
+  CheckCircle2,
+  Clock,
+  FolderKanban,
+  Users,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getProject, getTasksForProject, createTask, updateTask, deleteTask, getCommentsForTask, createComment, getUsers } from '../services/api';
+import PageHeader from '../components/PageHeader';
+import StatCard from '../components/StatCard';
+import LoadingState from '../components/LoadingState';
+import EmptyState from '../components/EmptyState';
 
 const ProjectPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,7 +68,8 @@ const ProjectPage: React.FC = () => {
       try {
         if (id) {
           const res = await getProject(id);
-          setProject(res);
+          const projectData = res?.project ?? res;
+          setProject(projectData);
         }
       } catch (err) {
         console.error(err);
@@ -94,15 +113,6 @@ const ProjectPage: React.FC = () => {
     } catch (err) {
       toast.error('Failed to create task');
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
   };
 
   const handleUpdateTask = async (taskId: string, updates: any) => {
@@ -181,23 +191,43 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const columns = useMemo(
+    () => ({
+      'To Do': tasks.filter((task) => task.status === 'To Do'),
+      'In Progress': tasks.filter((task) => task.status === 'In Progress'),
+      'Done': tasks.filter((task) => task.status === 'Done'),
+    }),
+    [tasks]
+  );
+
+  const statusCounts = useMemo(
+    () => ({
+      todo: columns['To Do'].length,
+      inProgress: columns['In Progress'].length,
+      done: columns['Done'].length,
+    }),
+    [columns]
+  );
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
+    return <LoadingState label="Loading project..." />;
   }
 
   if (!project) {
-    return <div className="text-center py-16">Project not found</div>;
+    return (
+      <EmptyState
+        icon={FolderKanban}
+        title="Project not found"
+        description="This project may have been removed or you no longer have access."
+        action={
+          <button onClick={() => navigate('/projects')} className="btn-primary flex items-center gap-2">
+            <ArrowLeft size={16} />
+            Back to projects
+          </button>
+        }
+      />
+    );
   }
-
-  const columns = {
-    'To Do': tasks.filter(task => task.status === 'To Do'),
-    'In Progress': tasks.filter(task => task.status === 'In Progress'),
-    'Done': tasks.filter(task => task.status === 'Done'),
-  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -210,46 +240,89 @@ const ProjectPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header - Jira Style */}
-      <div className="bg-white border-b border-neutral-300 -mx-8 -mt-8 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/projects')} className="btn-ghost flex items-center gap-1">
-              <ArrowLeft size={16} />
-            </button>
-            <div>
-              <h1 className="text-24 font-semibold text-neutral-1000">{project.name}</h1>
-              <p className="text-12 text-neutral-700 mt-0.5">{project.description}</p>
-            </div>
-          </div>
-          <button onClick={() => setShowTaskModal(true)} className="btn-primary gap-1">
+    <div className="space-y-8">
+      <PageHeader
+        title={project.name}
+        subtitle={
+          project.description ||
+          'Add a brief description so teammates know what success looks like.'
+        }
+        actions={
+          <button onClick={() => setShowTaskModal(true)} className="btn-primary flex items-center gap-2">
             <Plus size={16} />
-            Create
+            New task
           </button>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2 text-11 text-neutral-600">
+          <button onClick={() => navigate('/projects')} className="btn-ghost flex items-center gap-2 text-11 font-semibold uppercase tracking-wide">
+            <ArrowLeft size={14} />
+            Back to projects
+          </button>
+          {project.organization?.name && (
+            <span className="pill bg-neutral-200 text-neutral-800">
+              <Users size={12} />
+              {project.organization.name}
+            </span>
+          )}
+          <span className="pill bg-neutral-200 text-neutral-700">
+            Created {new Date(project.createdAt).toLocaleDateString()}
+          </span>
+          <span className="pill bg-neutral-200 text-neutral-700">
+            {tasks.length} task{tasks.length === 1 ? '' : 's'}
+          </span>
         </div>
+      </PageHeader>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          title="To do"
+          value={statusCounts.todo}
+          icon={ClipboardList}
+          tone="neutral"
+          description="Ready to be picked up."
+        />
+        <StatCard
+          title="In progress"
+          value={statusCounts.inProgress}
+          icon={Clock}
+          tone="purple"
+          description="Actively moving forward."
+        />
+        <StatCard
+          title="Done"
+          value={statusCounts.done}
+          icon={CheckCircle2}
+          tone="green"
+          description="Celebrate the wins."
+        />
       </div>
 
-      {/* View Toggle - Jira Style */}
-      <div className="flex gap-1 mt-4">
-        <button
-          onClick={() => setView('board')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-jira font-medium transition-colors text-14 ${
-            view === 'board' ? 'bg-neutral-200 text-neutral-1000' : 'text-neutral-800 hover:bg-neutral-100'
-          }`}
-        >
-          <LayoutGrid size={16} />
-          Board
-        </button>
-        <button
-          onClick={() => setView('list')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-jira font-medium transition-colors text-14 ${
-            view === 'list' ? 'bg-neutral-200 text-neutral-1000' : 'text-neutral-800 hover:bg-neutral-100'
-          }`}
-        >
-          <List size={16} />
-          List
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-1 rounded-full border border-neutral-300 bg-white p-1">
+          <button
+            onClick={() => setView('board')}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-14 font-medium transition ${
+              view === 'board'
+                ? 'bg-jira-500 text-white shadow-sm'
+                : 'text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <LayoutGrid size={16} />
+            Board
+          </button>
+          <button
+            onClick={() => setView('list')}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-14 font-medium transition ${
+              view === 'list'
+                ? 'bg-jira-500 text-white shadow-sm'
+                : 'text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <List size={16} />
+            List
+          </button>
+        </div>
       </div>
 
       {/* Board View */}
@@ -260,7 +333,7 @@ const ProjectPage: React.FC = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {Object.entries(columns).map(([status, statusTasks]) => (
               <DroppableColumn key={status} id={status} title={status} count={statusTasks.length}>
                 <SortableContext items={statusTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
@@ -292,106 +365,151 @@ const ProjectPage: React.FC = () => {
 
       {/* List View */}
       {view === 'list' && (
-        <div className="card">
-          <div className="divide-y divide-gray-200">
-            {tasks.map((task) => (
-              <div
-                key={task._id}
-                onClick={() => openTaskDetail(task)}
-                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 mb-1">{task.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                    <div className="flex items-center gap-2">
+        <div className="rounded-2xl border border-neutral-300 bg-white shadow-soft">
+          {tasks.length > 0 ? (
+            <div className="divide-y divide-neutral-200">
+              {tasks.map((task) => (
+                <div
+                  key={task._id}
+                  onClick={() => openTaskDetail(task)}
+                  className="flex flex-wrap items-start justify-between gap-4 p-5 transition hover:bg-neutral-100/60 cursor-pointer"
+                >
+                  <div className="space-y-2">
+                    <h4 className="text-14 font-semibold text-neutral-1000">{task.title}</h4>
+                    {task.description && (
+                      <p className="text-12 text-neutral-700 line-clamp-2 max-w-2xl">
+                        {task.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
                         {task.status}
                       </span>
                       {task.priority && (
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPriorityColor(task.priority)}`}>
+                        <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
                           {task.priority}
+                        </span>
+                      )}
+                      {task.dueDate && (
+                        <span className="pill bg-neutral-200 text-neutral-700">
+                          <Calendar size={12} />
+                          {new Date(task.dueDate).toLocaleDateString()}
                         </span>
                       )}
                     </div>
                   </div>
+                  <div className="flex flex-col items-end gap-2 text-12 text-neutral-600">
+                    {task.assignee && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-12 font-semibold text-white">
+                          {task.assignee.username.charAt(0).toUpperCase()}
+                        </div>
+                        <span>{task.assignee.username}</span>
+                      </div>
+                    )}
+                    <span>
+                      Updated {new Date(task.updatedAt || task.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {tasks.length === 0 && (
-              <div className="text-center py-16 text-gray-500">
-                No tasks yet. Create your first task to get started!
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16">
+              <EmptyState
+                icon={ClipboardList}
+                title="No tasks yet"
+                description="Kick off the project by creating tasks and assigning owners."
+                action={
+                  <button onClick={() => setShowTaskModal(true)} className="btn-primary flex items-center gap-2">
+                    <Plus size={16} />
+                    Create task
+                  </button>
+                }
+              />
+            </div>
+          )}
         </div>
       )}
 
       {/* Create Task Modal */}
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Create New Task</h2>
+          <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-neutral-200 px-6 py-5">
+              <h2 className="text-24 font-semibold text-neutral-1000">Create task</h2>
+              <p className="mt-1 text-12 text-neutral-600">
+                Capture the work, add context, and assign an owner to keep momentum high.
+              </p>
             </div>
-            <form onSubmit={handleCreateTask} className="p-6">
+            <form onSubmit={handleCreateTask} className="space-y-6 px-6 py-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                  <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                    Title *
+                  </label>
                   <input
                     type="text"
                     required
-                    className="input-field"
-                    placeholder="Task title..."
+                    className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                    placeholder="e.g., Finalize launch checklist"
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                    Description
+                  </label>
                   <textarea
-                    className="input-field"
-                    rows={4}
-                    placeholder="Task description..."
+                    className="input-field min-h-[120px] rounded-xl border-2 border-neutral-300 bg-neutral-100 py-3 focus:bg-white"
+                    placeholder="Add acceptance criteria, links, or background details."
                     value={newTaskDesc}
                     onChange={(e) => setNewTaskDesc(e.target.value)}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                  <select
-                    className="input-field"
-                    value={newTaskAssignee}
-                    onChange={(e) => setNewTaskAssignee(e.target.value)}
-                  >
-                    <option value="">Unassigned</option>
-                    {users.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.username} ({user.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                  <select
-                    className="input-field"
-                    value={newTaskPriority}
-                    onChange={(e) => setNewTaskPriority(e.target.value)}
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    <option value="Urgent">Urgent</option>
-                  </select>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                      Assign to
+                    </label>
+                    <select
+                      className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                      value={newTaskAssignee}
+                      onChange={(e) => setNewTaskAssignee(e.target.value)}
+                    >
+                      <option value="">Unassigned</option>
+                      {users.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.username} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                      Priority
+                    </label>
+                    <select
+                      className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                      value={newTaskPriority}
+                      onChange={(e) => setNewTaskPriority(e.target.value)}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-3 justify-end mt-6">
+              <div className="flex flex-wrap justify-end gap-3">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="btn-secondary">
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Create Task
+                <button type="submit" className="btn-primary flex items-center gap-2">
+                  <Plus size={16} />
+                  Create task
                 </button>
               </div>
             </form>
@@ -403,14 +521,14 @@ const ProjectPage: React.FC = () => {
       {showTaskDetail && selectedTask && (
         <div className="modal-overlay" onClick={() => setShowTaskDetail(false)}>
           <div className="modal-content max-w-3xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-200 flex items-start justify-between">
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedTask.title}</h2>
-                <div className="flex items-center gap-2">
+            <div className="flex items-start justify-between border-b border-neutral-200 px-6 py-5">
+              <div className="flex-1 space-y-3">
+                <h2 className="text-24 font-semibold text-neutral-1000">{selectedTask.title}</h2>
+                <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={selectedTask.status}
                     onChange={(e) => handleUpdateTask(selectedTask._id, { status: e.target.value })}
-                    className="text-sm px-3 py-1 border border-gray-300 rounded-lg"
+                    className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                   >
                     <option>To Do</option>
                     <option>In Progress</option>
@@ -419,58 +537,77 @@ const ProjectPage: React.FC = () => {
                   <select
                     value={selectedTask.priority || 'Medium'}
                     onChange={(e) => handleUpdateTask(selectedTask._id, { priority: e.target.value })}
-                    className="text-sm px-3 py-1 border border-gray-300 rounded-lg"
+                    className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                   >
                     <option>Low</option>
                     <option>Medium</option>
                     <option>High</option>
                     <option>Urgent</option>
                   </select>
+                  <span className={`badge ${selectedTask.status === 'Done' ? 'badge-done' : selectedTask.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
+                    {selectedTask.status}
+                  </span>
+                  {selectedTask.priority && (
+                    <span className={`priority-badge ${getPriorityColor(selectedTask.priority)}`}>
+                      {selectedTask.priority}
+                    </span>
+                  )}
                 </div>
               </div>
               <button
                 onClick={() => handleDeleteTask(selectedTask._id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
               >
-                <Trash2 size={20} />
+                <Trash2 size={18} />
               </button>
             </div>
-            <div className="p-6">
-              <div className="mb-6">
-                <h3 className="font-bold text-gray-900 mb-2">Description</h3>
-                <p className="text-gray-600">{selectedTask.description || 'No description'}</p>
+            <div className="space-y-8 px-6 py-6">
+              <div className="space-y-2">
+                <h3 className="text-14 font-semibold text-neutral-900">Description</h3>
+                <p className="rounded-2xl border border-neutral-200 bg-neutral-100 p-4 text-13 text-neutral-700">
+                  {selectedTask.description || 'No description yet.'}
+                </p>
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <MessageSquare size={18} />
+                <h3 className="flex items-center gap-2 text-14 font-semibold text-neutral-900">
+                  <MessageSquare size={16} />
                   Comments ({comments.length})
                 </h3>
-                <form onSubmit={handleAddComment} className="mb-4">
+                <form onSubmit={handleAddComment} className="mt-3 space-y-3">
                   <textarea
-                    className="input-field"
-                    rows={2}
-                    placeholder="Add a comment..."
+                    className="input-field min-h-[100px] rounded-xl border-2 border-neutral-300 bg-neutral-100 py-3 focus:bg-white"
+                    placeholder="Share updates, decisions, or questions..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                   />
-                  <button type="submit" className="btn-primary mt-2">
-                    Add Comment
-                  </button>
+                  <div className="flex justify-end">
+                    <button type="submit" className="btn-primary flex items-center gap-2">
+                      <MessageSquare size={16} />
+                      Add comment
+                    </button>
+                  </div>
                 </form>
-                <div className="space-y-3">
+                <div className="mt-6 space-y-3">
                   {comments.map((comment) => (
-                    <div key={comment._id} className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm text-gray-900">
-                          {comment.author?.username || 'User'}
-                        </span>
-                        <span className="text-xs text-gray-500">
+                    <div key={comment._id} className="rounded-2xl border border-neutral-200 bg-neutral-0 p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-13 font-semibold text-neutral-900">
+                            {comment.author?.username || 'User'}
+                          </span>
+                        </div>
+                        <span className="text-11 text-neutral-600">
                           {new Date(comment.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700">{comment.content}</p>
+                      <p className="mt-2 text-13 text-neutral-700">{comment.content}</p>
                     </div>
                   ))}
+                  {comments.length === 0 && (
+                    <p className="rounded-2xl border border-dashed border-neutral-300 p-4 text-center text-12 text-neutral-600">
+                      No comments yet. Start a thread to capture context.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -490,16 +627,18 @@ interface DroppableColumnProps {
 }
 
 const DroppableColumn: React.FC<DroppableColumnProps> = ({ id, title, count, children }) => {
-  const { setNodeRef } = useDroppable({ id });
+  const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
     <div
       ref={setNodeRef}
-      className="bg-neutral-100 rounded-jira p-2"
+      className={`flex min-h-[280px] flex-col gap-3 rounded-2xl border border-neutral-300 bg-neutral-100/80 p-4 transition ${
+        isOver ? 'border-jira-400 bg-jira-50/70 shadow-jira-hover' : ''
+      }`}
     >
-      <div className="flex items-center justify-between mb-2 px-1">
-        <h3 className="font-semibold text-neutral-800 text-12 uppercase tracking-wide">{title}</h3>
-        <span className="text-11 text-neutral-700">{count}</span>
+      <div className="flex items-center justify-between">
+        <h3 className="text-12 font-semibold uppercase tracking-wide text-neutral-700">{title}</h3>
+        <span className="pill bg-neutral-200 text-neutral-700">{count}</span>
       </div>
       {children}
     </div>
@@ -533,29 +672,34 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
     <div
       ref={setNodeRef}
       style={style}
-      className="task-card group relative"
+      className={`group relative rounded-2xl border border-neutral-300 bg-white p-4 shadow-jira transition ${
+        isDragging ? 'opacity-70 shadow-xl' : 'hover:border-jira-400 hover:shadow-jira-hover'
+      }`}
     >
-      <div className="flex items-start gap-1">
+      <div className="flex items-start gap-2">
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 transition-colors opacity-0 group-hover:opacity-100"
+          className="mt-1 cursor-grab text-neutral-400 opacity-0 transition group-hover:opacity-100 active:cursor-grabbing hover:text-neutral-600"
         >
           <GripVertical size={14} />
         </button>
-        <div className="flex-1" onClick={onClick}>
-          <h4 className="font-normal text-neutral-1000 text-14 mb-1 leading-tight">{task.title}</h4>
+        <div className="flex-1 space-y-2" onClick={onClick}>
+          <h4 className="text-14 font-semibold text-neutral-1000 leading-tight">{task.title}</h4>
           {task.description && (
-            <p className="text-12 text-neutral-700 mb-2 line-clamp-2">{task.description}</p>
+            <p className="text-12 text-neutral-700 line-clamp-2">{task.description}</p>
           )}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
+              {task.status}
+            </span>
             {task.priority && (
               <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
                 {task.priority}
               </span>
             )}
             {task.dueDate && (
-              <span className="text-11 text-neutral-600 flex items-center gap-0.5">
+              <span className="text-11 text-neutral-600 flex items-center gap-1">
                 <Calendar size={10} />
                 {new Date(task.dueDate).toLocaleDateString()}
               </span>
@@ -564,7 +708,7 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
         </div>
         {task.assignee && (
           <div className="flex items-center gap-1" title={`Assigned to ${task.assignee.username}`}>
-            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-11 font-semibold text-white">
               {task.assignee.username.charAt(0).toUpperCase()}
             </div>
           </div>
@@ -581,37 +725,42 @@ interface TaskCardProps {
   isDragging?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, isDragging }) => {
-  return (
-    <div className={`task-card ${isDragging ? 'shadow-2xl rotate-3 scale-105' : ''}`}>
-      <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
-      {task.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{task.description}</p>
-      )}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {task.priority && (
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPriorityColor(task.priority)}`}>
-              {task.priority}
-            </span>
-          )}
-          {task.dueDate && (
-            <span className="text-xs text-gray-500 flex items-center gap-1">
-              <Calendar size={12} />
-              {new Date(task.dueDate).toLocaleDateString()}
-            </span>
-          )}
-        </div>
-        {task.assignee && (
-          <div className="flex items-center gap-1" title={`Assigned to ${task.assignee.username}`}>
-            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xs">
-              {task.assignee.username.charAt(0).toUpperCase()}
-            </div>
-          </div>
+const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, isDragging }) => (
+  <div
+    className={`rounded-2xl border border-neutral-300 bg-white p-4 shadow-jira ${
+      isDragging ? 'rotate-3 scale-105 shadow-2xl' : ''
+    }`}
+  >
+    <h4 className="text-14 font-semibold text-neutral-1000">{task.title}</h4>
+    {task.description && (
+      <p className="mt-2 text-12 text-neutral-700 line-clamp-2">{task.description}</p>
+    )}
+    <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
+          {task.status}
+        </span>
+        {task.priority && (
+          <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
+            {task.priority}
+          </span>
+        )}
+        {task.dueDate && (
+          <span className="text-11 text-neutral-600 flex items-center gap-1">
+            <Calendar size={10} />
+            {new Date(task.dueDate).toLocaleDateString()}
+          </span>
         )}
       </div>
+      {task.assignee && (
+        <div className="flex items-center gap-1" title={`Assigned to ${task.assignee.username}`}>
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-11 font-semibold text-white">
+            {task.assignee.username.charAt(0).toUpperCase()}
+          </div>
+        </div>
+      )}
     </div>
-  );
-};
+  </div>
+);
 
 export default ProjectPage;

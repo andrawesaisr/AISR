@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Plus, Search, Trash2, Edit } from 'lucide-react';
+import { FileText, Plus, Search, Trash2, FolderKanban } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getDocuments, createDocument, deleteDocument, getProjects } from '../services/api';
+import PageHeader from '../components/PageHeader';
+import StatCard from '../components/StatCard';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 
 const DocumentsPage: React.FC = () => {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -68,144 +72,217 @@ const DocumentsPage: React.FC = () => {
     }
   };
 
-  const filteredDocuments = documents.filter(doc =>
-    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const stats = useMemo(() => {
+    const total = documents.length;
+    const linkedToProjects = documents.filter((doc) => !!doc.project).length;
+    const personal = total - linkedToProjects;
+    const latestTimestamp = documents.reduce((latest, doc) => {
+      const updatedAt = new Date(doc.updatedAt || doc.createdAt).getTime();
+      return updatedAt > latest ? updatedAt : latest;
+    }, 0);
+    const lastUpdatedLabel = latestTimestamp
+      ? new Intl.DateTimeFormat('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(new Date(latestTimestamp))
+      : '—';
+
+    return { total, linkedToProjects, personal, lastUpdatedLabel };
+  }, [documents]);
+
+  const filteredDocuments = useMemo(
+    () =>
+      documents.filter((doc) =>
+        doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    [documents, searchQuery]
   );
 
+  const stripHtml = (content: string) =>
+    content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const getPreviewText = (content?: string) => {
+    if (!content) return 'Empty document';
+    const text = stripHtml(content);
+    return text.length > 160 ? `${text.slice(0, 160)}…` : text || 'Empty document';
+  };
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
+    return <LoadingState label="Loading documents..." />;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Documents</h1>
-          <p className="text-gray-600">Create and manage your documents</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={20} />
-          New Document
-        </button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Documents"
+        subtitle="Capture knowledge, meeting notes, and specs alongside projects."
+        actions={
+          <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={18} />
+            New document
+          </button>
+        }
+      />
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-        <input
-          type="text"
-          placeholder="Search documents..."
-          className="input-field pl-12"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          title="Workspace documents"
+          value={stats.total}
+          icon={FileText}
+          tone="blue"
+          description="Knowledge you can reference anytime."
+        />
+        <StatCard
+          title="Linked to projects"
+          value={stats.linkedToProjects}
+          icon={FolderKanban}
+          tone="purple"
+          description="Docs tied to delivery in motion."
+        />
+        <StatCard
+          title="Last updated"
+          value={stats.lastUpdatedLabel}
+          tone="amber"
+          description="Keep content fresh and aligned."
         />
       </div>
 
-      {/* Documents Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDocuments.map((doc) => (
-          <div key={doc._id} className="card group relative">
-            <Link to={`/documents/${doc._id}`} className="block">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="text-secondary-600" size={24} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 mb-1 truncate">{doc.title}</h3>
-                  <p className="text-sm text-gray-600">
-                    {new Date(doc.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 line-clamp-3">
-                {doc.content ? doc.content.substring(0, 150) : 'Empty document'}
-              </p>
-            </Link>
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleDeleteDocument(doc._id);
-                }}
-                className="p-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-600 transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
+      <div className="rounded-2xl border border-neutral-300 bg-white p-5 shadow-soft">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+          <input
+            type="text"
+            placeholder="Search documents by title..."
+            className="input-field w-full rounded-xl border-2 border-neutral-200 bg-neutral-100 pl-12 pr-4 text-14 focus:bg-white"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
-      {filteredDocuments.length === 0 && (
-        <div className="text-center py-16">
-          <FileText className="mx-auto text-gray-400 mb-4" size={64} />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No documents found</h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery ? 'Try a different search term' : 'Create your first document to get started'}
-          </p>
-          {!searchQuery && (
-            <button onClick={() => setShowCreateModal(true)} className="btn-primary">
-              <Plus size={20} className="inline mr-2" />
-              Create Document
-            </button>
-          )}
+      {filteredDocuments.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title={searchQuery ? 'No documents match your search' : 'No documents yet'}
+          description={
+            searchQuery
+              ? 'Try adjusting your search keywords or clear the filter to browse everything.'
+              : 'Document sprint notes, decisions, or onboarding guides to share context.'
+          }
+          action={
+            searchQuery ? (
+              <button type="button" className="btn-secondary" onClick={() => setSearchQuery('')}>
+                Clear search
+              </button>
+            ) : (
+              <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
+                <Plus size={18} />
+                Create document
+              </button>
+            )
+          }
+        />
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {filteredDocuments.map((doc) => {
+            const linkedProject =
+              typeof doc.project === 'string'
+                ? projects.find((project) => project._id === doc.project)
+                : doc.project;
+            return (
+              <div
+                key={doc._id}
+                className="group relative flex h-full flex-col justify-between rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-jira transition hover:-translate-y-1 hover:shadow-jira-hover"
+              >
+                <Link to={`/documents/${doc._id}`} className="flex flex-1 flex-col">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-status-purple/10 text-status-purple">
+                        <FileText size={22} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-neutral-1000">{doc.title}</h3>
+                        <p className="text-12 text-neutral-600">
+                          Updated {new Date(doc.updatedAt || doc.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-4 flex-1 text-13 text-neutral-700 line-clamp-4">
+                    {getPreviewText(doc.content)}
+                  </p>
+                </Link>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="pill bg-neutral-200 text-neutral-700">
+                      {linkedProject?.name || 'Personal'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteDocument(doc._id);
+                    }}
+                    className="rounded-xl border border-red-200 px-3 py-1 text-12 font-semibold text-status-red opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Create Modal */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Create New Document</h2>
+          <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-neutral-200 px-6 py-5">
+              <h2 className="text-24 font-semibold text-neutral-1000">Create document</h2>
+              <p className="mt-1 text-12 text-neutral-600">
+                Draft meetings notes, plan specs, or capture decisions for your team.
+              </p>
             </div>
-            <form onSubmit={handleCreateDocument} className="p-6">
-              <div className="mb-4">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Document Title
+            <form onSubmit={handleCreateDocument} className="space-y-5 px-6 py-6">
+              <div>
+                <label htmlFor="title" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  Document title
                 </label>
                 <input
                   type="text"
                   id="title"
                   required
-                  className="input-field"
-                  placeholder="Enter document title..."
+                  className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                  placeholder="Standup notes – Week 32"
                   value={newDocTitle}
                   onChange={(e) => setNewDocTitle(e.target.value)}
                   autoFocus
                 />
               </div>
-              <div className="mb-6">
-                <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label htmlFor="project" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
                   Project (optional)
                 </label>
                 <select
                   id="project"
-                  className="input-field"
+                  className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
                 >
-                  <option value="">No project (personal document)</option>
+                  <option value="">Personal document</option>
                   {projects.map((project) => (
                     <option key={project._id} value={project._id}>
                       {project.name}
-                      {project.organization && ` (${project.organization.name})`}
+                      {project.organization?.name ? ` • ${project.organization.name}` : ''}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Select a project to share this document with your team
+                <p className="mt-1 text-11 text-neutral-600">
+                  Select a project to share this document with collaborators automatically.
                 </p>
               </div>
-              <div className="flex gap-3 justify-end">
+              <div className="flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -213,8 +290,9 @@ const DocumentsPage: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Create Document
+                <button type="submit" className="btn-primary flex items-center gap-2">
+                  <Plus size={16} />
+                  Create document
                 </button>
               </div>
             </form>

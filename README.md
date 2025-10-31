@@ -17,8 +17,6 @@ A full-stack project management platform with organization management, team coll
 
 ### Project Management
 - Create and organize projects within organizations
-- Project boards with customizable columns
-- Drag-and-drop task management
 - Project-level team assignments
 
 ### Task Management
@@ -69,7 +67,7 @@ aisr/
 │   ├── src/
 │   │   ├── components/    # Reusable UI components
 │   │   │   ├── layout/   # Layout components (Sidebar, Layout)
-│   │   │   ├── projects/ # Project-related components (Board)
+│   │   │   ├── projects/ # Project-related components
 │   │   │   └── tasks/    # Task components (NewTaskForm)
 │   │   ├── context/      # React Context providers
 │   │   │   ├── AuthContext.tsx
@@ -83,7 +81,6 @@ aisr/
 │   │   │   ├── OrganizationPage.tsx
 │   │   │   ├── ProjectsPage.tsx
 │   │   │   ├── ProjectPage.tsx
-│   │   │   ├── BoardPage.tsx
 │   │   │   ├── DocumentsPage.tsx
 │   │   │   ├── DocumentPage.tsx
 │   │   │   ├── TeamPage.tsx
@@ -289,3 +286,40 @@ Andrawes
 ---
 
 **Note**: This is a work in progress. More features and improvements are coming soon!
+
+## ✅ E2E Testing with Playwright
+
+High-confidence regression coverage is provided via Playwright. Tests launch both the React client and Express API against a dedicated MongoDB database.
+
+### One-time setup
+
+```bash
+cd client
+npm install --save-dev @playwright/test
+npx playwright install
+```
+
+### Resetting the E2E database
+
+```bash
+cd server
+MONGODB_URI=mongodb://127.0.0.1:27017/aisr_e2e npm run db:reset:e2e
+```
+
+### Running the suite
+
+```bash
+cd client
+MONGODB_URI=mongodb://127.0.0.1:27017/aisr_e2e npm run test:e2e
+```
+
+Helpful aliases:
+
+- `npm run test:e2e:headed` – watch tests in a real browser.
+- `npm run test:e2e:ui` – open the Playwright test explorer.
+
+### CI tips
+
+- The bundled `playwright.config.ts` launches the client dev server (port 3000) and API (port 5001) automatically.
+- Always point tests at an isolated MongoDB schema (defaults to `aisr_e2e`).
+- Traces and screenshots are captured on failure by default for quick triage.

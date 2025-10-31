@@ -23,8 +23,18 @@ export const login = async (email: string, password: string) => {
   return res.data;
 };
 
-export const register = async (username: string, email: string, password: string) => {
-  const res = await api.post('/auth/register', { username, email, password });
+export const register = async (payload: {
+  username: string;
+  email: string;
+  password: string;
+  organization?: {
+    name: string;
+    description?: string;
+    allowMemberInvite?: boolean;
+    requireApproval?: boolean;
+  };
+}) => {
+  const res = await api.post('/auth/register', payload);
   return res.data;
 };
 
@@ -41,6 +51,11 @@ export const getProject = async (id: string) => {
 
 export const createProject = async (project: { name: string, description: string }) => {
   const res = await api.post('/projects', project);
+  return res.data;
+};
+
+export const getOrganization = async (id: string) => {
+  const res = await api.get(`/organizations/${id}`);
   return res.data;
 };
 
@@ -89,12 +104,25 @@ export const getDocument = async (id: string) => {
   return res.data;
 };
 
-export const createDocument = async (document: { title: string, content?: string, project?: string }) => {
+export const createDocument = async (document: {
+  title: string;
+  content?: string;
+  project?: string;
+  docType?: string;
+  tags?: string[];
+  summary?: string;
+}) => {
   const res = await api.post('/documents', document);
   return res.data;
 };
 
-export const updateDocument = async (id: string, document: { title?: string, content?: string }) => {
+export const updateDocument = async (id: string, document: {
+  title?: string;
+  content?: string;
+  docType?: string;
+  tags?: string[];
+  summary?: string;
+}) => {
   const res = await api.patch(`/documents/${id}`, document);
   return res.data;
 };

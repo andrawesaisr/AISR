@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
+import { getErrorMessage } from '../utils/errors';
 
 const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
@@ -20,7 +21,7 @@ const ProjectsPage: React.FC = () => {
         setProjects(res);
       } catch (err) {
         console.error(err);
-        toast.error('Failed to load projects');
+        toast.error(getErrorMessage(err, 'Failed to load projects'));
       } finally {
         setLoading(false);
       }

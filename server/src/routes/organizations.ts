@@ -93,6 +93,11 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
     });
 
     const newOrganization = await organization.save();
+    const user = await User.findById(req.userId);
+    if (user && user.role !== 'admin') {
+      user.role = 'owner';
+      await user.save();
+    }
     const populated = await Organization.findById(newOrganization._id)
       .populate('createdBy', '-password')
       .populate('members.user', '-password');

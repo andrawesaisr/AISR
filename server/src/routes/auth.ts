@@ -1,6 +1,7 @@
 
 import { Router, Request, Response } from 'express';
 import User from '../models/User';
+import Organization from '../models/Organization';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -9,7 +10,8 @@ const router = Router();
 // Register a new user
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, organization } = req.body;
+    const shouldCreateOrg = organization?.name && organization.name.trim().length > 0;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -24,14 +26,49 @@ router.post('/register', async (req: Request, res: Response) => {
       password: hashedPassword,
     });
 
-    const newUser = await user.save();
-    
+    if (shouldCreateOrg) {
+      user.role = 'owner';
+    }
+
+    let newUser;
+    let createdOrganization;
+
+    try {
+      newUser = await user.save();
+
+      if (shouldCreateOrg) {
+        const org = new Organization({
+          name: organization.name.trim(),
+          description: organization.description,
+          createdBy: newUser._id,
+          members: [
+            {
+              user: newUser._id,
+              role: 'owner',
+              joinedAt: new Date(),
+            },
+          ],
+          settings: {
+            allowMemberInvite: organization.allowMemberInvite || false,
+            requireApproval: organization.requireApproval || false,
+          },
+        });
+
+        createdOrganization = await org.save();
+      }
+    } catch (creationError) {
+      if (newUser && !createdOrganization) {
+        await User.findByIdAndDelete(newUser._id);
+      }
+      throw creationError;
+    }
+
     // Generate JWT token for the new user
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET as string, {
       expiresIn: '1h',
     });
 
-    res.status(201).json({ token, userId: newUser._id });
+    res.status(201).json({ token, userId: newUser._id, organization: createdOrganization });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

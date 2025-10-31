@@ -2,7 +2,7 @@
 
 A full-stack project management platform with organization management, team collaboration, and task tracking capabilities.
 
-## 🚀 Features
+## Features
 
 ### Authentication & Authorization
 - User registration and login with JWT authentication

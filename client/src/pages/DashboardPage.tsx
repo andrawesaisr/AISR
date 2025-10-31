@@ -11,6 +11,7 @@ import {
   ClipboardList,
   CalendarClock,
   ArrowRight,
+  Building2,
 } from 'lucide-react';
 import { getProjects, getDocuments, getTasksForProject } from '../services/api';
 
@@ -243,6 +244,13 @@ const DashboardPage: React.FC = () => {
         description: 'See what needs your focus today.',
         icon: ClipboardList,
         accent: 'from-status-blue to-jira-500',
+      },
+      {
+        to: '/organizations',
+        title: 'Create workspace',
+        description: 'Invite teammates and manage permissions.',
+        icon: Building2,
+        accent: 'from-status-purple to-status-blue',
       },
     ],
     []

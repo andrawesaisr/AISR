@@ -116,6 +116,12 @@
   .input-field:focus {
     @apply bg-white;
   }
+
+  textarea.input-field {
+    height: auto;
+    min-height: 120px;
+    resize: vertical;
+  }
   
   /* Jira Sidebar Link */
   .sidebar-link {

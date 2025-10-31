@@ -10,6 +10,7 @@ import commentRoutes from './routes/comments';
 import userRoutes from './routes/users';
 import sprintRoutes from './routes/sprints';
 import organizationRoutes from './routes/organizations';
+import Organization from './models/Organization';
 import { auth } from './middleware/auth';
 import { verifyEmailConfig } from './utils/emailService';
 
@@ -29,9 +30,28 @@ if (!uri) {
 }
 
 mongoose.connect(uri)
-  .then(() => {
-    console.log("MongoDB database connection established successfully");
+  .then(async () => {
+    console.log('MongoDB database connection established successfully');
     verifyEmailConfig();
+
+    try {
+      await Organization.collection.dropIndex('invitations.token_1');
+      console.log('Dropped legacy invitations.token_1 index');
+    } catch (err: any) {
+      if (err?.codeName !== 'IndexNotFound' && err?.code !== 27) {
+        console.warn('Unable to drop legacy invitations index:', err.message || err);
+      }
+    }
+
+    try {
+      await Organization.collection.createIndex(
+        { 'invitations.token': 1 },
+        { unique: true, sparse: true, name: 'invitations.token_1' }
+      );
+      console.log('Ensured invitations.token_1 index');
+    } catch (err) {
+      console.error('Failed to create invitations index', err);
+    }
   })
   .catch(err => console.log(err));
 

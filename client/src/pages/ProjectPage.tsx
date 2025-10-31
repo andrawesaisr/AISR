@@ -19,11 +19,12 @@ import toast from 'react-hot-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getProject, getTasksForProject, createTask, updateTask, deleteTask, getCommentsForTask, createComment, getUsers } from '../services/api';
+import { getProject, getTasksForProject, createTask, updateTask, deleteTask, getCommentsForTask, createComment, getOrganization } from '../services/api';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
+import { getErrorMessage } from '../utils/errors';
 
 const ProjectPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +42,8 @@ const ProjectPage: React.FC = () => {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
+  const [organizationMembers, setOrganizationMembers] = useState<any[]>([]);
+  const [assignableUsers, setAssignableUsers] = useState<any[]>([]);
   const [newTaskAssignee, setNewTaskAssignee] = useState('');
 
   const sensors = useSensors(
@@ -73,45 +75,96 @@ const ProjectPage: React.FC = () => {
         }
       } catch (err) {
         console.error(err);
-        toast.error('Failed to load project');
+        toast.error(getErrorMessage(err, 'Failed to load project'));
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchUsers = async () => {
+    fetchProject();
+    fetchTasks();
+  }, [id]);
+
+  useEffect(() => {
+    const loadOrganizationMembers = async () => {
+      if (!project?.organization) {
+        setOrganizationMembers([]);
+        return;
+      }
+
+      const organizationId =
+        typeof project.organization === 'string'
+          ? project.organization
+          : project.organization._id;
+
+      if (!organizationId) {
+        setOrganizationMembers([]);
+        return;
+      }
+
       try {
-        const usersData = await getUsers();
-        setUsers(usersData);
+        const organization = await getOrganization(organizationId);
+        const members = (organization.members || [])
+          .map((m: any) => m.user)
+          .filter(Boolean);
+        setOrganizationMembers(members);
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load organization members', err);
       }
     };
 
-    fetchProject();
-    fetchTasks();
-    fetchUsers();
-  }, [id]);
+    loadOrganizationMembers();
+  }, [project?.organization]);
+
+  useEffect(() => {
+    const map = new Map<string, any>();
+
+    const addUser = (user: any) => {
+      if (!user || !user._id) return;
+      map.set(user._id, user);
+    };
+
+    if (project?.owner) {
+      if (typeof project.owner === 'string') {
+        const match = organizationMembers.find((member) => member?._id === project.owner);
+        if (match) addUser(match);
+      } else {
+        addUser(project.owner);
+      }
+    }
+
+    (project?.members || []).forEach((member: any) => {
+      if (typeof member === 'string') {
+        const match = organizationMembers.find((orgMember) => orgMember?._id === member);
+        if (match) addUser(match);
+      } else {
+        addUser(member);
+      }
+    });
+    organizationMembers.forEach(addUser);
+
+    setAssignableUsers(Array.from(map.values()));
+  }, [project, organizationMembers]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const newTask = await createTask({
+      await createTask({
         title: newTaskTitle,
         description: newTaskDesc,
         project: id!,
         assignee: newTaskAssignee || undefined,
         priority: newTaskPriority,
       });
-      setTasks([...tasks, newTask]);
       setShowTaskModal(false);
       setNewTaskTitle('');
       setNewTaskDesc('');
       setNewTaskAssignee('');
       setNewTaskPriority('Medium');
       toast.success('Task created!');
+      await fetchTasks();
     } catch (err) {
-      toast.error('Failed to create task');
+      toast.error(getErrorMessage(err, 'Failed to create task'));
     }
   };
 
@@ -121,7 +174,7 @@ const ProjectPage: React.FC = () => {
       fetchTasks();
       toast.success('Task updated!');
     } catch (err) {
-      toast.error('Failed to update task');
+      toast.error(getErrorMessage(err, 'Failed to update task'));
     }
   };
 
@@ -133,7 +186,7 @@ const ProjectPage: React.FC = () => {
       setShowTaskDetail(false);
       toast.success('Task deleted');
     } catch (err) {
-      toast.error('Failed to delete task');
+      toast.error(getErrorMessage(err, 'Failed to delete task'));
     }
   };
 
@@ -157,7 +210,7 @@ const ProjectPage: React.FC = () => {
       setNewComment('');
       toast.success('Comment added');
     } catch (err) {
-      toast.error('Failed to add comment');
+      toast.error(getErrorMessage(err, 'Failed to add comment'));
     }
   };
 
@@ -172,22 +225,27 @@ const ProjectPage: React.FC = () => {
     if (!over) return;
 
     const taskId = active.id as string;
-    const newStatus = over.id as string;
+    const targetTask = tasks.find((t) => t._id === over.id);
+    const targetStatus = targetTask ? targetTask.status : (over.id as string);
 
-    const task = tasks.find(t => t._id === taskId);
-    if (!task || task.status === newStatus) return;
+    if (!['To Do', 'In Progress', 'Done'].includes(targetStatus)) {
+      return;
+    }
+
+    const task = tasks.find((t) => t._id === taskId);
+    if (!task || task.status === targetStatus) return;
 
     // Optimistic update
-    setTasks(tasks.map(t => 
-      t._id === taskId ? { ...t, status: newStatus } : t
-    ));
+    setTasks((prev) =>
+      prev.map((t) => (t._id === taskId ? { ...t, status: targetStatus } : t))
+    );
 
     try {
-      await updateTask(taskId, { status: newStatus });
-      toast.success(`Task moved to ${newStatus}`);
+      await updateTask(taskId, { status: targetStatus });
+      toast.success(`Task moved to ${targetStatus}`);
     } catch (err) {
-      toast.error('Failed to update task');
-      fetchTasks(); // Revert on error
+      toast.error(getErrorMessage(err, 'Failed to update task'));
+      fetchTasks();
     }
   };
 
@@ -445,10 +503,14 @@ const ProjectPage: React.FC = () => {
             <form onSubmit={handleCreateTask} className="space-y-6 px-6 py-6">
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  <label
+                    htmlFor="task-title"
+                    className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                  >
                     Title *
                   </label>
                   <input
+                    id="task-title"
                     type="text"
                     required
                     className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
@@ -458,10 +520,14 @@ const ProjectPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  <label
+                    htmlFor="task-description"
+                    className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                  >
                     Description
                   </label>
                   <textarea
+                    id="task-description"
                     className="input-field min-h-[120px] rounded-xl border-2 border-neutral-300 bg-neutral-100 py-3 focus:bg-white"
                     placeholder="Add acceptance criteria, links, or background details."
                     value={newTaskDesc}
@@ -473,19 +539,25 @@ const ProjectPage: React.FC = () => {
                     <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
                       Assign to
                     </label>
-                    <select
-                      className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
-                      value={newTaskAssignee}
-                      onChange={(e) => setNewTaskAssignee(e.target.value)}
-                    >
-                      <option value="">Unassigned</option>
-                      {users.map((user) => (
+                  <select
+                    className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                    value={newTaskAssignee}
+                    onChange={(e) => setNewTaskAssignee(e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {assignableUsers.length === 0 ? (
+                      <option disabled value="">
+                        Invite teammates to assign work
+                      </option>
+                    ) : (
+                      assignableUsers.map((user) => (
                         <option key={user._id} value={user._id}>
                           {user.username} ({user.email})
                         </option>
-                      ))}
-                    </select>
-                  </div>
+                      ))
+                    )}
+                  </select>
+                </div>
                   <div>
                     <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
                       Priority
@@ -668,6 +740,10 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const assigneeName =
+    task.assignee && typeof task.assignee === 'object' ? task.assignee.username : undefined;
+  const assigneeInitial = assigneeName ? assigneeName.charAt(0).toUpperCase() : undefined;
+
   return (
     <div
       ref={setNodeRef}
@@ -706,10 +782,10 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
             )}
           </div>
         </div>
-        {task.assignee && (
-          <div className="flex items-center gap-1" title={`Assigned to ${task.assignee.username}`}>
+        {assigneeName && assigneeInitial && (
+          <div className="flex items-center gap-1" title={`Assigned to ${assigneeName}`}>
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-11 font-semibold text-white">
-              {task.assignee.username.charAt(0).toUpperCase()}
+              {assigneeInitial}
             </div>
           </div>
         )}
@@ -725,42 +801,48 @@ interface TaskCardProps {
   isDragging?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, isDragging }) => (
-  <div
-    className={`rounded-2xl border border-neutral-300 bg-white p-4 shadow-jira ${
-      isDragging ? 'rotate-3 scale-105 shadow-2xl' : ''
-    }`}
-  >
-    <h4 className="text-14 font-semibold text-neutral-1000">{task.title}</h4>
-    {task.description && (
-      <p className="mt-2 text-12 text-neutral-700 line-clamp-2">{task.description}</p>
-    )}
-    <div className="mt-3 flex items-center justify-between gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
-          {task.status}
-        </span>
-        {task.priority && (
-          <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
-            {task.priority}
+const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, isDragging }) => {
+  const assigneeName =
+    task.assignee && typeof task.assignee === 'object' ? task.assignee.username : undefined;
+  const assigneeInitial = assigneeName ? assigneeName.charAt(0).toUpperCase() : undefined;
+
+  return (
+    <div
+      className={`rounded-2xl border border-neutral-300 bg-white p-4 shadow-jira ${
+        isDragging ? 'rotate-3 scale-105 shadow-2xl' : ''
+      }`}
+    >
+      <h4 className="text-14 font-semibold text-neutral-1000">{task.title}</h4>
+      {task.description && (
+        <p className="mt-2 text-12 text-neutral-700 line-clamp-2">{task.description}</p>
+      )}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
+            {task.status}
           </span>
-        )}
-        {task.dueDate && (
-          <span className="text-11 text-neutral-600 flex items-center gap-1">
-            <Calendar size={10} />
-            {new Date(task.dueDate).toLocaleDateString()}
-          </span>
+          {task.priority && (
+            <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
+              {task.priority}
+            </span>
+          )}
+          {task.dueDate && (
+            <span className="text-11 text-neutral-600 flex items-center gap-1">
+              <Calendar size={10} />
+              {new Date(task.dueDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+        {assigneeName && assigneeInitial && (
+          <div className="flex items-center gap-1" title={`Assigned to ${assigneeName}`}>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-11 font-semibold text-white">
+              {assigneeInitial}
+            </div>
+          </div>
         )}
       </div>
-      {task.assignee && (
-        <div className="flex items-center gap-1" title={`Assigned to ${task.assignee.username}`}>
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-11 font-semibold text-white">
-            {task.assignee.username.charAt(0).toUpperCase()}
-          </div>
-        </div>
-      )}
     </div>
-  </div>
-);
+  );
+};
 
 export default ProjectPage;

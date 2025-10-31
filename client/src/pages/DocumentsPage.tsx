@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Plus, Search, Trash2, FolderKanban } from 'lucide-react';
+import { FileText, Plus, Search, Trash2, FolderKanban, Sparkles, NotebookPen } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getDocuments, createDocument, deleteDocument, getProjects } from '../services/api';
+import { getErrorMessage } from '../utils/errors';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import EmptyState from '../components/EmptyState';
@@ -14,7 +15,11 @@ const DocumentsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newDocTitle, setNewDocTitle] = useState('');
+  const [newDocContent, setNewDocContent] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
+  const [selectedDocType, setSelectedDocType] = useState('note');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [tagInput, setTagInput] = useState('');
   const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -37,10 +42,109 @@ const DocumentsPage: React.FC = () => {
       setDocuments(data);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load documents');
+      toast.error(getErrorMessage(err, 'Failed to load documents'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const templates = useMemo(
+    () => ({
+      meeting: {
+        id: 'meeting',
+        label: 'Meeting Notes',
+        docType: 'meeting',
+        placeholderTitle: 'Team Sync – Week ##',
+        tags: ['meeting', 'notes'],
+        content: `## 📅 Meeting Details
+- Date:
+- Attendees:
+
+## 📝 Agenda
+- Topic 1
+- Topic 2
+
+## ✅ Decisions
+- 
+
+## 📌 Action Items
+- [ ] Owner – Description (due …)
+
+## 💬 Notes
+- 
+`,
+      },
+      decision: {
+        id: 'decision',
+        label: 'Decision Log',
+        docType: 'decision',
+        placeholderTitle: 'Decision: Short Description',
+        tags: ['decision'],
+        content: `## 🎯 Context
+- 
+
+## 🤔 Options Considered
+- Option A – Pros / Cons
+- Option B – Pros / Cons
+
+## ✅ Decision
+- 
+
+## 🚀 Next Steps
+- [ ] Owner – Description (due …)
+
+## 📚 References
+- 
+`,
+      },
+      spec: {
+        id: 'spec',
+        label: 'Project Brief',
+        docType: 'spec',
+        placeholderTitle: 'Project: Short Name',
+        tags: ['spec', 'project'],
+        content: `## 🧭 Overview
+- Goal:
+- Success metrics:
+
+## 👥 Stakeholders
+- Owner:
+- Collaborators:
+
+## 📌 Requirements
+- 
+
+## 🧱 Constraints & Risks
+- 
+
+## 🔄 Milestones
+- Milestone / Target date
+
+## ❓Open Questions
+- 
+`,
+      },
+    }),
+    []
+  );
+
+  const resetForm = () => {
+    setNewDocTitle('');
+    setNewDocContent('');
+    setSelectedProject('');
+    setSelectedDocType('note');
+    setSelectedTemplate('');
+    setTagInput('');
+  };
+
+  const applyTemplate = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const template = templates[templateId as keyof typeof templates];
+    if (!template) return;
+    setSelectedDocType(template.docType);
+    setNewDocTitle(template.placeholderTitle);
+    setNewDocContent(template.content);
+    setTagInput(template.tags.join(', '));
   };
 
   const handleCreateDocument = async (e: React.FormEvent) => {
@@ -48,16 +152,20 @@ const DocumentsPage: React.FC = () => {
     try {
       const newDoc = await createDocument({ 
         title: newDocTitle, 
-        content: '',
-        project: selectedProject || undefined
+        content: newDocContent,
+        project: selectedProject || undefined,
+        docType: selectedDocType,
+        tags: tagInput
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
       });
       setDocuments([newDoc, ...documents]);
       setShowCreateModal(false);
-      setNewDocTitle('');
-      setSelectedProject('');
+      resetForm();
       toast.success('Document created!');
     } catch (err) {
-      toast.error('Failed to create document');
+      toast.error(getErrorMessage(err, 'Failed to create document'));
     }
   };
 
@@ -68,7 +176,7 @@ const DocumentsPage: React.FC = () => {
       setDocuments(documents.filter(doc => doc._id !== id));
       toast.success('Document deleted');
     } catch (err) {
-      toast.error('Failed to delete document');
+      toast.error(getErrorMessage(err, 'Failed to delete document'));
     }
   };
 
@@ -93,9 +201,14 @@ const DocumentsPage: React.FC = () => {
 
   const filteredDocuments = useMemo(
     () =>
-      documents.filter((doc) =>
-        doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
+      documents.filter((doc) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          doc.title.toLowerCase().includes(query) ||
+          (doc.tags || []).some((tag: string) => tag.toLowerCase().includes(query)) ||
+          (doc.docType || '').toLowerCase().includes(query)
+        );
+      }),
     [documents, searchQuery]
   );
 
@@ -108,6 +221,23 @@ const DocumentsPage: React.FC = () => {
     return text.length > 160 ? `${text.slice(0, 160)}…` : text || 'Empty document';
   };
 
+  const getDocTypeLabel = (doc: any) => {
+    switch (doc.docType) {
+      case 'meeting':
+        return 'Meeting Notes';
+      case 'decision':
+        return 'Decision Log';
+      case 'spec':
+        return 'Project Brief';
+      case 'retro':
+        return 'Retrospective';
+      case 'research':
+        return 'Research';
+      default:
+        return 'Note';
+    }
+  };
+
   if (loading) {
     return <LoadingState label="Loading documents..." />;
   }
@@ -118,7 +248,13 @@ const DocumentsPage: React.FC = () => {
         title="Documents"
         subtitle="Capture knowledge, meeting notes, and specs alongside projects."
         actions={
-          <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
+          <button
+            onClick={() => {
+              resetForm();
+              setShowCreateModal(true);
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
             <Plus size={18} />
             New document
           </button>
@@ -206,6 +342,14 @@ const DocumentsPage: React.FC = () => {
                         <p className="text-12 text-neutral-600">
                           Updated {new Date(doc.updatedAt || doc.createdAt).toLocaleDateString()}
                         </p>
+                        <p className="mt-1 text-11 font-semibold text-neutral-700">
+                          {getDocTypeLabel(doc)}
+                        </p>
+                        {doc.summary && (
+                          <p className="mt-1 text-12 text-neutral-600 line-clamp-2">
+                            {doc.summary}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -218,6 +362,11 @@ const DocumentsPage: React.FC = () => {
                     <span className="pill bg-neutral-200 text-neutral-700">
                       {linkedProject?.name || 'Personal'}
                     </span>
+                    {(doc.tags || []).map((tag: string) => (
+                      <span key={tag} className="pill bg-neutral-200 text-neutral-700">
+                        #{tag}
+                      </span>
+                    ))}
                   </div>
                   <button
                     onClick={(e) => {
@@ -246,6 +395,32 @@ const DocumentsPage: React.FC = () => {
             </div>
             <form onSubmit={handleCreateDocument} className="space-y-5 px-6 py-6">
               <div>
+                <p className="text-12 font-semibold uppercase tracking-wide text-neutral-700 mb-2 flex items-center gap-2">
+                  <Sparkles size={14} /> Start from template
+                </p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {Object.values(templates).map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => applyTemplate(template.id)}
+                      className={`rounded-xl border px-3 py-3 text-left transition hover:border-jira-300 hover:bg-jira-50 ${
+                        selectedTemplate === template.id
+                          ? 'border-jira-400 bg-jira-50'
+                          : 'border-neutral-300 bg-white'
+                      }`}
+                    >
+                      <p className="text-13 font-semibold text-neutral-900 flex items-center gap-2">
+                        <NotebookPen size={14} />
+                        {template.label}
+                      </p>
+                      <p className="mt-1 text-11 text-neutral-600">{template.tags.join(', ')}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
                 <label htmlFor="title" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
                   Document title
                 </label>
@@ -259,6 +434,25 @@ const DocumentsPage: React.FC = () => {
                   onChange={(e) => setNewDocTitle(e.target.value)}
                   autoFocus
                 />
+              </div>
+              <div>
+                <label htmlFor="doc-type" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  Document type
+                </label>
+                <select
+                  id="doc-type"
+                  className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                  value={selectedDocType}
+                  onChange={(e) => setSelectedDocType(e.target.value)}
+                >
+                  <option value="note">General note</option>
+                  <option value="meeting">Meeting notes</option>
+                  <option value="decision">Decision log</option>
+                  <option value="spec">Project brief</option>
+                  <option value="retro">Retro</option>
+                  <option value="research">Research</option>
+                  <option value="custom">Custom</option>
+                </select>
               </div>
               <div>
                 <label htmlFor="project" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
@@ -281,6 +475,35 @@ const DocumentsPage: React.FC = () => {
                 <p className="mt-1 text-11 text-neutral-600">
                   Select a project to share this document with collaborators automatically.
                 </p>
+              </div>
+              <div>
+                <label htmlFor="doc-tags" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  id="doc-tags"
+                  className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                  placeholder="meeting, decisions"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                  Quick outline (optional)
+                </label>
+                <textarea
+                  className="input-field min-h-[160px] rounded-xl border-2 border-neutral-300 bg-neutral-100 py-3 focus:bg-white"
+                  placeholder="Add context or leave blank to start fresh in the editor."
+                  value={newDocContent}
+                  onChange={(e) => setNewDocContent(e.target.value)}
+                />
+                {selectedTemplate && (
+                  <p className="mt-1 text-11 text-neutral-600">
+                    Template content is preloaded – edit or add context before creating the document.
+                  </p>
+                )}
               </div>
               <div className="flex justify-end gap-3">
                 <button

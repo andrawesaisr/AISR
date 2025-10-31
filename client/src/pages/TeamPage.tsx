@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
+import { getErrorMessage } from '../utils/errors';
 
 const TeamPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -29,7 +30,7 @@ const TeamPage: React.FC = () => {
       setUsers(data);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load team members');
+      toast.error(getErrorMessage(err, 'Failed to load team members'));
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,7 @@ const TeamPage: React.FC = () => {
       setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
       toast.success('Role updated successfully');
     } catch (err) {
-      toast.error('Failed to update role');
+      toast.error(getErrorMessage(err, 'Failed to update role'));
     }
   };
 

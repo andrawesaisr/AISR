@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { createProject } from '../services/api';
 import { useOrganization } from '../context/OrganizationContext';
 import PageHeader from '../components/PageHeader';
+import { getErrorMessage } from '../utils/errors';
 
 const NewProjectPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -18,6 +19,12 @@ const NewProjectPage: React.FC = () => {
   useEffect(() => {
     fetchOrganizations();
   }, []);
+
+  useEffect(() => {
+    if (!organization && organizations.length === 1) {
+      setOrganization(organizations[0]._id);
+    }
+  }, [organization, organizations]);
 
   const selectedOrg = useMemo(
     () => organizations.find((org) => org._id === organization),
@@ -41,7 +48,7 @@ const NewProjectPage: React.FC = () => {
       navigate(`/projects/${project._id}`);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create project');
+      toast.error(getErrorMessage(err, 'Failed to create project'));
     } finally {
       setLoading(false);
     }
@@ -185,6 +192,20 @@ const NewProjectPage: React.FC = () => {
         </div>
 
         <div className="space-y-4 rounded-2xl border border-neutral-300 bg-white p-6 shadow-soft">
+          {organizations.length === 0 && (
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-100/80 p-4">
+              <h3 className="text-sm font-semibold text-neutral-900">No workspace yet</h3>
+              <p className="mt-1 text-xs text-neutral-600">
+                Create an organization to invite teammates and manage shared projects. You can do this from the Organizations page anytime.
+              </p>
+              <Link
+                to="/organizations"
+                className="mt-3 inline-flex items-center gap-1 text-12 font-semibold text-jira-600 hover:text-jira-500"
+              >
+                Go to organizations
+              </Link>
+            </div>
+          )}
           <div className="rounded-2xl border border-jira-200 bg-jira-50/60 p-5">
             <div className="flex items-start gap-3">
               <Target size={20} className="mt-1 text-jira-600" />

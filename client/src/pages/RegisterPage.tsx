@@ -5,15 +5,20 @@ import toast from 'react-hot-toast';
 import { register } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useOrganization } from '../context/OrganizationContext';
+import { getErrorMessage } from '../utils/errors';
 
 const RegisterPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const inviteEmail = searchParams.get('email');
   const inviteToken = searchParams.get('inviteToken');
+  const isInvited = Boolean(inviteToken);
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState(inviteEmail || '');
   const [password, setPassword] = useState('');
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [workspaceDescription, setWorkspaceDescription] = useState('');
+  const [createWorkspace, setCreateWorkspace] = useState(!isInvited);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -29,7 +34,23 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await register(username, email, password);
+      if (createWorkspace && !workspaceName.trim()) {
+        toast.error('Please give your workspace a name.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await register({
+        username,
+        email,
+        password,
+        organization: createWorkspace
+          ? {
+              name: workspaceName.trim(),
+              description: workspaceDescription.trim() || undefined,
+            }
+          : undefined,
+      });
       toast.success('Account created successfully!');
       login(response.token, response.userId);
 
@@ -45,8 +66,12 @@ const RegisterPage: React.FC = () => {
       }
 
       navigate('/dashboard');
+      if (createWorkspace) {
+        toast.success('Workspace ready to go!');
+      }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      const message = getErrorMessage(err, 'Registration failed');
+      toast.error(message);
       console.error(err);
     } finally {
       setLoading(false);
@@ -168,6 +193,65 @@ const RegisterPage: React.FC = () => {
                 />
                 <p className="mt-1 text-11 text-neutral-600">Must include at least 6 characters.</p>
               </div>
+
+              {!isInvited && (
+                <div className="rounded-xl border border-neutral-200 bg-neutral-100/60 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                        Workspace setup
+                      </p>
+                      <p className="text-12 text-neutral-600">
+                        Spin up an organization so you can invite teammates and manage projects.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 text-12 text-neutral-700">
+                      <input
+                        type="checkbox"
+                        checked={createWorkspace}
+                        onChange={(e) => setCreateWorkspace(e.target.checked)}
+                        className="h-4 w-4 rounded border-neutral-400 text-jira-500 focus:ring-jira-500"
+                      />
+                      Create workspace
+                    </label>
+                  </div>
+                  {createWorkspace && (
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label
+                          htmlFor="workspace-name"
+                          className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                        >
+                          Workspace name
+                        </label>
+                        <input
+                          id="workspace-name"
+                          type="text"
+                          className="input-field"
+                          placeholder="Acme Product Team"
+                          value={workspaceName}
+                          onChange={(e) => setWorkspaceName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="workspace-description"
+                          className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                        >
+                          Description (optional)
+                        </label>
+                        <textarea
+                          id="workspace-description"
+                          className="input-field min-h-[96px] py-3"
+                          placeholder="What is this team focused on?"
+                          value={workspaceDescription}
+                          onChange={(e) => setWorkspaceDescription(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"

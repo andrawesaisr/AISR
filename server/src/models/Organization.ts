@@ -95,7 +95,10 @@ const organizationSchema = new Schema<IOrganization>({
     trim: true,
   },
   members: [organizationMemberSchema],
-  invitations: [invitationSchema],
+  invitations: {
+    type: [invitationSchema],
+    default: [],
+  },
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -118,7 +121,7 @@ const organizationSchema = new Schema<IOrganization>({
 // Index for faster queries
 organizationSchema.index({ 'members.user': 1 });
 organizationSchema.index({ 'invitations.email': 1 });
-organizationSchema.index({ 'invitations.token': 1 });
+organizationSchema.index({ 'invitations.token': 1 }, { unique: true, sparse: true });
 
 const Organization = model<IOrganization>('Organization', organizationSchema);
 

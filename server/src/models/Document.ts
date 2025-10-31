@@ -10,6 +10,8 @@ export interface IDocument extends MongoDocument {
   collaborators: IUser['_id'][];
   tags: string[];
   isPublic: boolean;
+  docType: 'note' | 'meeting' | 'decision' | 'retro' | 'spec' | 'research' | 'custom';
+  summary?: string;
 }
 
 const documentSchema = new Schema<IDocument>({
@@ -42,6 +44,16 @@ const documentSchema = new Schema<IDocument>({
   isPublic: {
     type: Boolean,
     default: false,
+  },
+  docType: {
+    type: String,
+    enum: ['note', 'meeting', 'decision', 'retro', 'spec', 'research', 'custom'],
+    default: 'note',
+  },
+  summary: {
+    type: String,
+    trim: true,
+    default: '',
   },
 }, {
   timestamps: true,

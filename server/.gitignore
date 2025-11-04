@@ -41,3 +41,4 @@ Thumbs.db
 *.pem
 ROLES_QUICK_REFERENCE.md
 ROLE_PERMISSIONS.md
+/src/generated/prisma

@@ -41,13 +41,14 @@ export default defineConfig({
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        MONGODB_URI: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aisr_e2e',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aisr_e2e',
       },
     },
   ],
 });
 
 function envDefaults() {
-  process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aisr_e2e';
+  process.env.DATABASE_URL =
+    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aisr_e2e';
   process.env.E2E_BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 }

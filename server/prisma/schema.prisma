@@ -1,0 +1,260 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN @map("admin")
+  OWNER @map("owner")
+  MEMBER @map("member")
+}
+
+enum TaskStatus {
+  TO_DO @map("To Do")
+  IN_PROGRESS @map("In Progress")
+  DONE @map("Done")
+}
+
+enum TaskPriority {
+  LOW @map("Low")
+  MEDIUM @map("Medium")
+  HIGH @map("High")
+  URGENT @map("Urgent")
+}
+
+enum TaskType {
+  STORY @map("Story")
+  BUG @map("Bug")
+  TASK @map("Task")
+  EPIC @map("Epic")
+}
+
+enum DocumentType {
+  NOTE @map("note")
+  MEETING @map("meeting")
+  DECISION @map("decision")
+  RETRO @map("retro")
+  SPEC @map("spec")
+  RESEARCH @map("research")
+  CUSTOM @map("custom")
+}
+
+enum OrganizationRole {
+  OWNER @map("owner")
+  ADMIN @map("admin")
+  MEMBER @map("member")
+}
+
+enum InvitationStatus {
+  PENDING @map("pending")
+  ACCEPTED @map("accepted")
+  EXPIRED @map("expired")
+}
+
+enum SprintStatus {
+  PLANNING @map("planning")
+  ACTIVE @map("active")
+  COMPLETED @map("completed")
+}
+
+model User {
+  id         String    @id @default(uuid())
+  username   String    @unique
+  password   String
+  email      String    @unique
+  role       UserRole  @default(MEMBER)
+  avatar     String?
+  jobTitle   String?
+  department String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  ownedProjects      Project[]                @relation("ProjectOwner")
+  memberProjects     Project[]                @relation("ProjectMembers")
+  tasksAssigned      Task[]                   @relation("TaskAssignee")
+  tasksReported      Task[]                   @relation("TaskReporter")
+  comments           Comment[]
+  documentsOwned     Document[]               @relation("DocumentOwner")
+  collaboratingDocs  Document[]               @relation("DocumentCollaborators")
+  organizationsCreated Organization[]         @relation("OrganizationCreatedBy")
+  organizationMemberships OrganizationMember[]
+  invitationsSent    OrganizationInvitation[] @relation("InvitationInvitedBy")
+  sprintsCreated     Sprint[]                 @relation("SprintCreatedBy")
+}
+
+model Project {
+  id             String     @id @default(uuid())
+  name           String
+  description    String?
+  ownerId        String
+  organizationId String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  owner        User         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members      User[]       @relation("ProjectMembers")
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  tasks        Task[]
+  documents    Document[]
+  sprints      Sprint[]
+
+  @@index([ownerId])
+  @@index([organizationId])
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  projectId      String
+  assigneeId     String?
+  status         TaskStatus   @default(TO_DO)
+  priority       TaskPriority @default(MEDIUM)
+  dueDate        DateTime?
+  tags           String[]     @default([])
+  attachments    String[]     @default([])
+  estimatedHours Float?
+  actualHours    Float?
+  storyPoints    Int?
+  sprintId       String?
+  type           TaskType     @default(TASK)
+  epicLinkId     String?
+  reporterId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee     User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter     User?     @relation("TaskReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  sprint       Sprint?   @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  epicLink     Task?     @relation("TaskEpicLink", fields: [epicLinkId], references: [id], onDelete: SetNull)
+  epicChildren Task[]    @relation("TaskEpicLink")
+  comments     Comment[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([reporterId])
+  @@index([sprintId])
+  @@index([epicLinkId])
+}
+
+model Sprint {
+  id          String       @id @default(uuid())
+  name        String
+  goal        String?
+  projectId   String
+  startDate   DateTime
+  endDate     DateTime
+  status      SprintStatus @default(PLANNING)
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("SprintCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  tasks     Task[]
+
+  @@index([projectId])
+  @@index([createdById])
+}
+
+model Document {
+  id           String      @id @default(uuid())
+  title        String
+  content      String      @default("")
+  projectId    String?
+  ownerId      String
+  tags         String[]    @default([])
+  isPublic     Boolean     @default(false)
+  docType      DocumentType @default(NOTE)
+  summary      String      @default("")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  owner         User     @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  collaborators User[]   @relation("DocumentCollaborators")
+
+  @@index([projectId])
+  @@index([ownerId])
+}
+
+model Comment {
+  id              String    @id @default(uuid())
+  content         String
+  taskId          String
+  authorId        String
+  parentCommentId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  task    Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment? @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([taskId])
+  @@index([authorId])
+  @@index([parentCommentId])
+}
+
+model Organization {
+  id                String                  @id @default(uuid())
+  name              String
+  description       String?
+  createdById       String
+  allowMemberInvite Boolean                 @default(false)
+  requireApproval   Boolean                 @default(false)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  createdBy    User                    @relation("OrganizationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  members      OrganizationMember[]
+  invitations  OrganizationInvitation[]
+  projects     Project[]
+
+  @@index([createdById])
+}
+
+model OrganizationMember {
+  id             String           @id @default(uuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole @default(MEMBER)
+  joinedAt       DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model OrganizationInvitation {
+  id             String            @id @default(uuid())
+  organizationId String
+  email          String
+  role           OrganizationRole  @default(MEMBER)
+  invitedById    String
+  token          String            @unique
+  expiresAt      DateTime
+  status         InvitationStatus  @default(PENDING)
+  createdAt      DateTime          @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InvitationInvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+}

@@ -1,176 +1,195 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import crypto from 'crypto';
-import Organization from '../models/Organization';
-import User from '../models/User';
-import { auth } from '../middleware/auth';
+import prisma, { Prisma } from '../prismaClient';
+import { auth, AuthRequest } from '../middleware/auth';
 import { sendInvitationEmail } from '../utils/emailService';
-import { isAdmin, isOwner, isMember } from '../middleware/roles';
+import { isOwner, isMember } from '../middleware/roles';
 
 const router = Router();
 
-interface AuthRequest extends Request {
-  userId?: string;
-  user?: any;
-}
+const USER_PUBLIC_SELECT = {
+  id: true,
+  username: true,
+  email: true,
+  role: true,
+  avatar: true,
+  jobTitle: true,
+  department: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const ORGANIZATION_MEMBER_INCLUDE = {
+  user: { select: USER_PUBLIC_SELECT },
+};
+
+const ORGANIZATION_INVITATION_INCLUDE = {
+  invitedBy: { select: USER_PUBLIC_SELECT },
+};
+
+const ORGANIZATION_INCLUDE = {
+  createdBy: { select: USER_PUBLIC_SELECT },
+  members: {
+    include: ORGANIZATION_MEMBER_INCLUDE,
+    orderBy: { joinedAt: 'desc' as const },
+  },
+  invitations: {
+    include: ORGANIZATION_INVITATION_INCLUDE,
+    orderBy: { createdAt: 'desc' as const },
+  },
+};
+
+const fetchOrganization = (id: string) =>
+  prisma.organization.findUnique({
+    where: { id },
+    include: ORGANIZATION_INCLUDE,
+  });
+
+type OrganizationWithRelations = Prisma.OrganizationGetPayload<{
+  include: typeof ORGANIZATION_INCLUDE;
+}>;
+
+type OrganizationMemberWithUser = Prisma.OrganizationMemberGetPayload<{
+  include: typeof ORGANIZATION_MEMBER_INCLUDE;
+}>;
+
+type OrganizationInvitationWithInviter = Prisma.OrganizationInvitationGetPayload<{
+  include: typeof ORGANIZATION_INVITATION_INCLUDE;
+}>;
 
 // Get all organizations for current user
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
-    let organizations;
-    if (req.user.role === 'admin') {
-      organizations = await Organization.find()
-        .populate('createdBy', '-password')
-        .populate('members.user', '-password')
-        .populate('invitations.invitedBy', '-password');
-    } else {
-      organizations = await Organization.find({
-        'members.user': req.userId,
-      })
-        .populate('createdBy', '-password')
-        .populate('members.user', '-password')
-        .populate('invitations.invitedBy', '-password');
+    if (!req.userId) {
+      return res.status(401).json({ message: 'Not authorized' });
     }
-    
-    // Filter out members with null user references for each organization
-    organizations.forEach(org => {
-      org.members = org.members.filter(m => m.user != null);
+
+    const where =
+      req.user?.role === 'admin'
+        ? undefined
+        : {
+            members: {
+              some: {
+                userId: req.userId,
+              },
+            },
+          };
+
+    const organizations = await prisma.organization.findMany({
+      where,
+      include: ORGANIZATION_INCLUDE,
+      orderBy: { createdAt: 'desc' },
     });
-    
+
     res.json(organizations);
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to fetch organizations' });
   }
 });
 
 // Get one organization
 router.get('/:id', auth, isMember, async (req: AuthRequest, res: Response) => {
   try {
-    const organization = await Organization.findById(req.params.id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password')
-      .populate('invitations.invitedBy', '-password');
-    
+    const organization = await fetchOrganization(req.params.id);
+
     if (!organization) {
       return res.status(404).json({ message: 'Organization not found' });
     }
 
-    // Filter out members with null user references (deleted users)
-    organization.members = organization.members.filter(m => m.user != null);
-
-    // Check if user is a member
-    const isMember = organization.members.some(
-      (m) => m.user && m.user._id.toString() === req.userId
-    );
-
-    if (!isMember) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
     res.json(organization);
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to fetch organization' });
   }
 });
 
 // Create organization
 router.post('/', auth, async (req: AuthRequest, res: Response) => {
   try {
-    const organization = new Organization({
-      name: req.body.name,
-      description: req.body.description,
-      createdBy: req.userId,
-      members: [
-        {
-          user: req.userId,
-          role: 'owner',
-          joinedAt: new Date(),
+    if (!req.userId) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    const organization = await prisma.$transaction(async (tx) => {
+      const createdOrganization = await tx.organization.create({
+        data: {
+          name: req.body.name,
+          description: req.body.description,
+          createdById: req.userId!,
+          allowMemberInvite: Boolean(req.body.allowMemberInvite),
+          requireApproval: Boolean(req.body.requireApproval),
+          members: {
+            create: {
+              userId: req.userId!,
+              role: 'OWNER',
+            },
+          },
         },
-      ],
-      settings: {
-        allowMemberInvite: req.body.allowMemberInvite || false,
-        requireApproval: req.body.requireApproval || false,
-      },
+        include: ORGANIZATION_INCLUDE,
+      });
+
+      if (req.user?.role !== 'admin') {
+        await tx.user.update({
+          where: { id: req.userId },
+          data: { role: 'OWNER' },
+        });
+      }
+
+      return createdOrganization;
     });
 
-    const newOrganization = await organization.save();
-    const user = await User.findById(req.userId);
-    if (user && user.role !== 'admin') {
-      user.role = 'owner';
-      await user.save();
-    }
-    const populated = await Organization.findById(newOrganization._id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password');
-
-    res.status(201).json(populated);
+    res.status(201).json(organization);
   } catch (err: any) {
-    res.status(400).json({ message: err.message });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return res.status(400).json({ message: 'Organization name already in use' });
+    }
+    res.status(400).json({ message: err.message || 'Unable to create organization' });
   }
 });
 
 // Update organization
 router.patch('/:id', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
-    const organization = await Organization.findById(req.params.id);
-    
-    if (!organization) {
+    const data: Prisma.OrganizationUpdateInput = {};
+
+    if (req.body.name !== undefined) data.name = req.body.name;
+    if (req.body.description !== undefined) data.description = req.body.description;
+    if (req.body.settings) {
+      const settings = req.body.settings;
+      if (settings.allowMemberInvite !== undefined) {
+        data.allowMemberInvite = Boolean(settings.allowMemberInvite);
+      }
+      if (settings.requireApproval !== undefined) {
+        data.requireApproval = Boolean(settings.requireApproval);
+      }
+    }
+
+    const organization = await prisma.organization.update({
+      where: { id: req.params.id },
+      data,
+      include: ORGANIZATION_INCLUDE,
+    });
+
+    res.json(organization);
+  } catch (err: any) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return res.status(404).json({ message: 'Organization not found' });
     }
-
-    // Check if user is owner or admin
-    const member = organization.members.find(
-      (m) => m.user && m.user.toString() === req.userId
-    );
-
-    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    if (req.body.name) organization.name = req.body.name;
-    if (req.body.description !== undefined) organization.description = req.body.description;
-    if (req.body.settings) {
-      organization.settings = {
-        ...organization.settings,
-        ...req.body.settings,
-      };
-    }
-
-    const updated = await organization.save();
-    const populated = await Organization.findById(updated._id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password');
-
-    res.json(populated);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ message: err.message || 'Unable to update organization' });
   }
 });
 
 // Delete organization
 router.delete('/:id', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
-    const organization = await Organization.findById(req.params.id);
-    
-    if (!organization) {
-      return res.status(404).json({ message: 'Organization not found' });
-    }
-
-    // Filter out members with null user references
-    organization.members = organization.members.filter(m => m.user != null);
-
-    // Only owner can delete
-    const member = organization.members.find(
-      (m) => m.user && m.user.toString() === req.userId
-    );
-
-    if (!member || member.role !== 'owner') {
-      return res.status(403).json({ message: 'Only owner can delete organization' });
-    }
-
-    await organization.deleteOne();
+    await prisma.organization.delete({
+      where: { id: req.params.id },
+    });
     res.json({ message: 'Organization deleted' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+    res.status(500).json({ message: err.message || 'Unable to delete organization' });
   }
 });
 
@@ -183,364 +202,351 @@ router.post('/:id/invite', auth, isOwner, async (req: AuthRequest, res: Response
       return res.status(400).json({ message: 'Email and role are required' });
     }
 
-    const organization = await Organization.findById(req.params.id)
-      .populate('members.user', '-password');
-    
+    const organization = await prisma.organization.findUnique({
+      where: { id: req.params.id },
+      include: {
+        members: {
+          include: ORGANIZATION_MEMBER_INCLUDE,
+        },
+        invitations: true,
+      },
+    });
+
     if (!organization) {
       return res.status(404).json({ message: 'Organization not found' });
     }
 
-    // Filter out null user references
-    organization.members = organization.members.filter(m => m.user != null);
-
-    // Check if user has permission to invite
     const member = organization.members.find(
-      (m) => m.user && m.user._id.toString() === req.userId
+      (m: OrganizationMemberWithUser) => m.userId === req.userId
     );
 
     if (!member) {
       return res.status(403).json({ message: 'Not a member of this organization' });
     }
 
-    const canInvite = 
-      member.role === 'owner' || 
-      member.role === 'admin' || 
-      (member.role === 'member' && organization.settings?.allowMemberInvite);
+    const canInvite =
+      member.role === 'OWNER' ||
+      member.role === 'ADMIN' ||
+      (member.role === 'MEMBER' && organization.allowMemberInvite);
 
     if (!canInvite) {
       return res.status(403).json({ message: 'Not authorized to invite members' });
     }
 
-    // Check if user is already a member
+    const normalizedEmail = String(email).toLowerCase();
+
     const existingMember = organization.members.find(
-      (m: any) => m.user && m.user.email === email.toLowerCase()
+      (m: OrganizationMemberWithUser) => m.user?.email?.toLowerCase() === normalizedEmail
     );
 
     if (existingMember) {
       return res.status(400).json({ message: 'User is already a member' });
     }
 
-    // Check if there's already a pending invitation
     const existingInvite = organization.invitations.find(
-      (inv) => inv.email === email.toLowerCase() && inv.status === 'pending'
+      (inv) => inv.email === normalizedEmail && inv.status === 'PENDING'
     );
 
     if (existingInvite) {
       return res.status(400).json({ message: 'Invitation already sent to this email' });
     }
 
-    // Generate unique token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Add invitation
-    organization.invitations.push({
-      email: email.toLowerCase(),
-      role: role,
-      invitedBy: req.userId as any,
-      token,
-      expiresAt,
-      status: 'pending',
-      createdAt: new Date(),
+    await prisma.organizationInvitation.create({
+      data: {
+        organizationId: organization.id,
+        email: normalizedEmail,
+        role,
+        invitedById: req.userId!,
+        token,
+        expiresAt,
+      },
     });
 
-    await organization.save();
-
-    // Get inviter info
-    const inviter = await User.findById(req.userId);
-    
-    // Send invitation email
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const inviteLink = `${frontendUrl}/invite/${token}`;
 
     const emailSent = await sendInvitationEmail({
       to: email,
       organizationName: organization.name,
-      inviterName: inviter?.username || 'A team member',
+      inviterName: req.user?.username || 'A team member',
       inviteLink,
       role,
     });
 
     res.status(201).json({
-      message: emailSent 
-        ? 'Invitation sent successfully' 
+      message: emailSent
+        ? 'Invitation sent successfully'
         : 'Invitation created (email not configured)',
-      inviteLink: !emailSent ? inviteLink : undefined, // Return link if email failed
+      inviteLink: emailSent ? undefined : inviteLink,
     });
   } catch (err: any) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ message: err.message || 'Unable to invite member' });
   }
 });
 
 // Accept invitation
 router.post('/invite/:token/accept', auth, async (req: AuthRequest, res: Response) => {
   try {
-    const { token } = req.params;
-
-    const organization = await Organization.findOne({
-      'invitations.token': token,
-    });
-
-    if (!organization) {
-      return res.status(404).json({ message: 'Invitation not found' });
+    if (!req.userId) {
+      return res.status(401).json({ message: 'Not authorized' });
     }
 
-    const invitation = organization.invitations.find(
-      (inv) => inv.token === token
-    );
+    const invitation = await prisma.organizationInvitation.findUnique({
+      where: { token: req.params.token },
+      include: {
+        organization: {
+          include: {
+            members: true,
+          },
+        },
+      },
+    });
 
     if (!invitation) {
       return res.status(404).json({ message: 'Invitation not found' });
     }
 
-    if (invitation.status !== 'pending') {
+    if (invitation.status !== 'PENDING') {
       return res.status(400).json({ message: 'Invitation already used or expired' });
     }
 
     if (new Date() > invitation.expiresAt) {
-      invitation.status = 'expired';
-      await organization.save();
+      await prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'EXPIRED' },
+      });
       return res.status(400).json({ message: 'Invitation has expired' });
     }
 
-    // Get user email
-    const user = await User.findById(req.userId);
-    
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { email: true },
+    });
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if invitation email matches user email
     if (user.email.toLowerCase() !== invitation.email) {
-      return res.status(403).json({ 
-        message: 'This invitation was sent to a different email address' 
-      });
+      return res
+        .status(403)
+        .json({ message: 'This invitation was sent to a different email address' });
     }
 
-    // Check if already a member (filter out null users first)
-    const existingMember = organization.members.find(
-      (m) => m.user && m.user.toString() === req.userId
-    );
+    const existingMember = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: invitation.organizationId,
+          userId: req.userId,
+        },
+      },
+    });
 
     if (existingMember) {
       return res.status(400).json({ message: 'Already a member of this organization' });
     }
 
-    // Add user as member
-    console.log('Adding user to organization:', req.userId, 'with role:', invitation.role);
-    organization.members.push({
-      user: req.userId as any,
-      role: invitation.role as any,
-      joinedAt: new Date(),
-    });
+    await prisma.$transaction([
+      prisma.organizationMember.create({
+        data: {
+          organizationId: invitation.organizationId,
+          userId: req.userId,
+          role: invitation.role,
+        },
+      }),
+      prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'ACCEPTED' },
+      }),
+    ]);
 
-    // Mark invitation as accepted
-    invitation.status = 'accepted';
-
-    await organization.save();
-    console.log('Organization saved. Total members:', organization.members.length);
-
-    const populated = await Organization.findById(organization._id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password')
-      .populate('invitations.invitedBy', '-password');
-
-    // Filter out members with null user references
-    if (populated) {
-      console.log('Before filtering - members:', populated.members.length);
-      populated.members = populated.members.filter(m => m.user != null);
-      console.log('After filtering - members:', populated.members.length);
-    }
+    const organization = await fetchOrganization(invitation.organizationId);
 
     res.json({
       message: 'Successfully joined organization',
-      organization: populated,
+      organization,
     });
   } catch (err: any) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ message: err.message || 'Unable to accept invitation' });
   }
 });
 
 // Get invitation details (public - no auth required)
-router.get('/invite/:token', async (req: Request, res: Response) => {
+router.get('/invite/:token', async (req: AuthRequest, res: Response) => {
   try {
-    const { token } = req.params;
-
-    const organization = await Organization.findOne({
-      'invitations.token': token,
-    }).populate('createdBy', 'username');
-
-    if (!organization) {
-      return res.status(404).json({ message: 'Invitation not found' });
-    }
-
-    const invitation = organization.invitations.find(
-      (inv) => inv.token === token
-    );
+    const invitation = await prisma.organizationInvitation.findUnique({
+      where: { token: req.params.token },
+      include: {
+        organization: {
+          select: {
+            name: true,
+            description: true,
+          },
+        },
+      },
+    });
 
     if (!invitation) {
       return res.status(404).json({ message: 'Invitation not found' });
     }
 
-    if (invitation.status !== 'pending') {
+    if (invitation.status !== 'PENDING') {
       return res.status(400).json({ message: 'Invitation already used or expired' });
     }
 
     if (new Date() > invitation.expiresAt) {
+      await prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'EXPIRED' },
+      });
       return res.status(400).json({ message: 'Invitation has expired' });
     }
 
     res.json({
-      organizationName: organization.name,
-      organizationDescription: organization.description,
+      organizationName: invitation.organization.name,
+      organizationDescription: invitation.organization.description,
       role: invitation.role,
       email: invitation.email,
       expiresAt: invitation.expiresAt,
     });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to fetch invitation' });
   }
 });
 
 // Remove member from organization
 router.delete('/:id/members/:userId', auth, isOwner, async (req: AuthRequest, res: Response) => {
   try {
-    const organization = await Organization.findById(req.params.id);
-    
-    if (!organization) {
-      return res.status(404).json({ message: 'Organization not found' });
+    const organizationId = req.params.id;
+    const targetUserId = req.params.userId;
+
+    const targetMembership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: targetUserId,
+        },
+      },
+    });
+
+    if (!targetMembership) {
+      return res.status(404).json({ message: 'Member not found' });
     }
 
-    // Filter out null user references
-    organization.members = organization.members.filter(m => m.user != null);
-
-    // Check if requester has permission
-    const requester = organization.members.find(
-      (m) => m.user && m.user.toString() === req.userId
-    );
-
-    if (!requester || (requester.role !== 'owner' && requester.role !== 'admin')) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    // Can't remove owner
-    const targetMember = organization.members.find(
-      (m) => m.user && m.user.toString() === req.params.userId
-    );
-
-    if (targetMember?.role === 'owner') {
+    if (targetMembership.role === 'OWNER') {
       return res.status(400).json({ message: 'Cannot remove organization owner' });
     }
 
-    // Remove member
-    organization.members = organization.members.filter(
-      (m) => m.user && m.user.toString() !== req.params.userId
-    );
+    const requesterMembership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: req.userId!,
+        },
+      },
+    });
 
-    await organization.save();
+    if (!requesterMembership || !['OWNER', 'ADMIN'].includes(requesterMembership.role)) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
 
-    const populated = await Organization.findById(organization._id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password');
+    await prisma.organizationMember.delete({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: targetUserId,
+        },
+      },
+    });
 
-    res.json(populated);
+    const organization = await fetchOrganization(organizationId);
+
+    res.json(organization);
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to remove member' });
   }
 });
 
 // Update member role
-router.patch('/:id/members/:userId/role', auth, isOwner, async (req: AuthRequest, res: Response) => {
-  try {
-    const { role } = req.body;
+router.patch(
+  '/:id/members/:userId/role',
+  auth,
+  isOwner,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { role } = req.body;
 
-    if (!role || !['admin', 'member'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
+      if (!role || !['ADMIN', 'MEMBER'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+
+      const membership = await prisma.organizationMember.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: req.params.id,
+            userId: req.params.userId,
+          },
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({ message: 'Member not found' });
+      }
+
+      if (membership.role === 'OWNER') {
+        return res.status(400).json({ message: 'Cannot change owner role' });
+      }
+
+      await prisma.organizationMember.update({
+        where: {
+          organizationId_userId: {
+            organizationId: req.params.id,
+            userId: req.params.userId,
+          },
+        },
+        data: { role },
+      });
+
+      const organization = await fetchOrganization(req.params.id);
+
+      res.json(organization);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || 'Unable to update member role' });
     }
-
-    const organization = await Organization.findById(req.params.id);
-    
-    if (!organization) {
-      return res.status(404).json({ message: 'Organization not found' });
-    }
-
-    // Filter out null user references
-    organization.members = organization.members.filter(m => m.user != null);
-
-    // Only owner can change roles
-    const requester = organization.members.find(
-      (m) => m.user && m.user.toString() === req.userId
-    );
-
-    if (!requester || requester.role !== 'owner') {
-      return res.status(403).json({ message: 'Only owner can change member roles' });
-    }
-
-    // Find target member
-    const targetMember = organization.members.find(
-      (m) => m.user && m.user.toString() === req.params.userId
-    );
-
-    if (!targetMember) {
-      return res.status(404).json({ message: 'Member not found' });
-    }
-
-    if (targetMember.role === 'owner') {
-      return res.status(400).json({ message: 'Cannot change owner role' });
-    }
-
-    // Update role
-    targetMember.role = role;
-    await organization.save();
-
-    const populated = await Organization.findById(organization._id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password');
-
-    res.json(populated);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
   }
-});
+);
 
 // Cancel invitation
-router.delete('/:id/invitations/:invitationId', auth, isOwner, async (req: AuthRequest, res: Response) => {
-  try {
-    const organization = await Organization.findById(req.params.id);
-    
-    if (!organization) {
-      return res.status(404).json({ message: 'Organization not found' });
+router.delete(
+  '/:id/invitations/:invitationId',
+  auth,
+  isOwner,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const invitation = await prisma.organizationInvitation.findUnique({
+        where: { id: req.params.invitationId },
+        select: { organizationId: true },
+      });
+
+      if (!invitation || invitation.organizationId !== req.params.id) {
+        return res.status(404).json({ message: 'Invitation not found' });
+      }
+
+      await prisma.organizationInvitation.delete({
+        where: { id: req.params.invitationId },
+      });
+
+      const organization = await fetchOrganization(req.params.id);
+
+      res.json(organization);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || 'Unable to cancel invitation' });
     }
-
-    // Filter out null user references
-    organization.members = organization.members.filter(m => m.user != null);
-
-    // Check permission
-    const member = organization.members.find(
-      (m) => m.user && m.user.toString() === req.userId
-    );
-
-    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    // Remove invitation
-    organization.invitations = organization.invitations.filter(
-      (inv) => inv._id?.toString() !== req.params.invitationId
-    );
-
-    await organization.save();
-
-    const populated = await Organization.findById(organization._id)
-      .populate('createdBy', '-password')
-      .populate('members.user', '-password')
-      .populate('invitations.invitedBy', '-password');
-
-    res.json(populated);
-  } catch (err: any) {
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 export default router;

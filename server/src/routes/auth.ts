@@ -1,11 +1,17 @@
-
 import { Router, Request, Response } from 'express';
-import User from '../models/User';
-import Organization from '../models/Organization';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import prisma, { Prisma } from '../prismaClient';
 
 const router = Router();
+
+const ensureJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return secret;
+};
 
 // Register a new user
 router.post('/register', async (req: Request, res: Response) => {
@@ -13,64 +19,84 @@ router.post('/register', async (req: Request, res: Response) => {
     const { username, email, password, organization } = req.body;
     const shouldCreateOrg = organization?.name && organization.name.trim().length > 0;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({
-      username,
-      email,
-      password: hashedPassword,
-    });
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const user = await tx.user.create({
+        data: {
+          username,
+          email,
+          password: hashedPassword,
+          role: shouldCreateOrg ? 'OWNER' : 'MEMBER',
+        },
+        select: {
+          id: true,
+        },
+      });
 
-    if (shouldCreateOrg) {
-      user.role = 'owner';
-    }
+      if (!shouldCreateOrg) {
+        return { user, organization: null };
+      }
 
-    let newUser;
-    let createdOrganization;
-
-    try {
-      newUser = await user.save();
-
-      if (shouldCreateOrg) {
-        const org = new Organization({
+      const createdOrganization = await tx.organization.create({
+        data: {
           name: organization.name.trim(),
           description: organization.description,
-          createdBy: newUser._id,
-          members: [
-            {
-              user: newUser._id,
-              role: 'owner',
-              joinedAt: new Date(),
-            },
-          ],
-          settings: {
-            allowMemberInvite: organization.allowMemberInvite || false,
-            requireApproval: organization.requireApproval || false,
+          createdById: user.id,
+          allowMemberInvite: Boolean(organization.allowMemberInvite),
+          requireApproval: Boolean(organization.requireApproval),
+          members: {
+            create: [
+              {
+                role: 'OWNER',
+                joinedAt: new Date(),
+                user: {
+                  connect: { id: user.id },
+                },
+              },
+            ],
           },
-        });
+        },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  email: true,
+                  role: true,
+                  avatar: true,
+                  jobTitle: true,
+                  department: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
-        createdOrganization = await org.save();
-      }
-    } catch (creationError) {
-      if (newUser && !createdOrganization) {
-        await User.findByIdAndDelete(newUser._id);
-      }
-      throw creationError;
-    }
+      return { user, organization: createdOrganization };
+    });
 
-    // Generate JWT token for the new user
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET as string, {
+    const token = jwt.sign({ userId: result.user.id }, ensureJwtSecret(), {
       expiresIn: '1h',
     });
 
-    res.status(201).json({ token, userId: newUser._id, organization: createdOrganization });
+    res.status(201).json({
+      token,
+      userId: result.user.id,
+      organization: result.organization,
+    });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to register user' });
   }
 });
 
@@ -79,7 +105,14 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -89,14 +122,13 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {
+    const token = jwt.sign({ userId: user.id }, ensureJwtSecret(), {
       expiresIn: '1h',
     });
 
-    res.json({ token, userId: user._id });
+    res.json({ token, userId: user.id });
   } catch (err: any) {
-    console.log("error: ", err)
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to login' });
   }
 });
 

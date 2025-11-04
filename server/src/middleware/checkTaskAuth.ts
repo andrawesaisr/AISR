@@ -1,51 +1,72 @@
 import { Response, NextFunction } from 'express';
-import Task from '../models/Task';
-import Project from '../models/Project';
-import Organization from '../models/Organization';
+import prisma from '../prismaClient';
 import { AuthRequest } from '../middleware/auth';
+import {
+  isOrganizationOwner,
+  isUserInOrganization,
+  projectAccessSelection,
+} from './checkProjectAuth';
+
+type ProjectMember = { id: string };
+
+const fetchProjectForTask = async (taskId: string) =>
+  prisma.task.findUnique({
+    where: { id: taskId },
+    select: {
+      id: true,
+      projectId: true,
+      project: {
+        select: projectAccessSelection,
+      },
+    },
+  });
+
+const fetchProjectById = async (projectId: string) =>
+  prisma.project.findUnique({
+    where: { id: projectId },
+    select: projectAccessSelection,
+  });
 
 // Check if user has access to view a task (through project membership)
 export const isTaskMember = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    // Admin can view all tasks
-    if (req.user.role === 'admin') {
+    if (req.user?.role === 'admin') {
       return next();
     }
 
-    const task = await Task.findById(id).populate('project');
+    const task = await fetchProjectForTask(id);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const project = await Project.findById(task.project);
+    const project = task.project;
+
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check if user is project owner
-    if (project.owner.toString() === userId) {
+    if (project.ownerId === userId) {
       return next();
     }
 
-    // Check if user is a project member
-    if (project.members.map(m => m.toString()).includes(userId)) {
+    if (project.members.some((member: ProjectMember) => member.id === userId)) {
       return next();
     }
 
-    // Check if user is in the project's organization
-    if (project.organization) {
-      const org = await Organization.findById(project.organization);
-      if (org && org.members.some(m => m.user.toString() === userId)) {
-        return next();
-      }
+    if (isUserInOrganization(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Not authorized to access this task' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize task access' });
   }
 };
 
@@ -54,36 +75,33 @@ export const canEditTask = async (req: AuthRequest, res: Response, next: NextFun
   const { id } = req.params;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    const task = await Task.findById(id).populate('project');
+    const task = await fetchProjectForTask(id);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const project = await Project.findById(task.project);
+    const project = task.project;
+
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check if user is project owner
-    if (project.owner.toString() === userId) {
+    if (project.ownerId === userId) {
       return next();
     }
 
-    // Check if user is organization owner
-    if (project.organization) {
-      const org = await Organization.findById(project.organization);
-      if (org) {
-        const member = org.members.find(m => m.user.toString() === userId);
-        if (member && member.role === 'owner') {
-          return next();
-        }
-      }
+    if (isOrganizationOwner(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Only owners can edit/delete tasks' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize task update' });
   }
 };
 
@@ -92,74 +110,71 @@ export const canCreateTask = async (req: AuthRequest, res: Response, next: NextF
   const { project: projectId } = req.body;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
     if (!projectId) {
       return res.status(400).json({ message: 'Project ID is required' });
     }
 
-    const project = await Project.findById(projectId);
+    const project = await fetchProjectById(projectId);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check if user is project owner
-    if (project.owner.toString() === userId) {
+    if (project.ownerId === userId) {
       return next();
     }
 
-    // Check if user is organization owner
-    if (project.organization) {
-      const org = await Organization.findById(project.organization);
-      if (org) {
-        const member = org.members.find(m => m.user.toString() === userId);
-        if (member && member.role === 'owner') {
-          return next();
-        }
-      }
+    if (isOrganizationOwner(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Only owners can create tasks' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize task creation' });
   }
 };
 
 // Check if user can view tasks for a project
-export const canViewProjectTasks = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const canViewProjectTasks = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   const { projectId } = req.params;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    // Admin can view all tasks
-    if (req.user.role === 'admin') {
+    if (req.user?.role === 'admin') {
       return next();
     }
 
-    const project = await Project.findById(projectId);
+    const project = await fetchProjectById(projectId);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check if user is project owner
-    if (project.owner.toString() === userId) {
+    if (project.ownerId === userId) {
       return next();
     }
 
-    // Check if user is a project member
-    if (project.members.map(m => m.toString()).includes(userId)) {
+    if (project.members.some((member: ProjectMember) => member.id === userId)) {
       return next();
     }
 
-    // Check if user is in the project's organization (any role can view)
-    if (project.organization) {
-      const org = await Organization.findById(project.organization);
-      if (org && org.members.some(m => m.user.toString() === userId)) {
-        return next();
-      }
+    if (isUserInOrganization(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Not authorized to view tasks for this project' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize project tasks view' });
   }
 };

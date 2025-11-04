@@ -1,67 +1,96 @@
 import { Response, NextFunction } from 'express';
-import DocumentModel from '../models/Document';
-import Project from '../models/Project';
-import Organization from '../models/Organization';
+import prisma, { Prisma } from '../prismaClient';
 import { AuthRequest } from '../middleware/auth';
+import {
+  isOrganizationOwner,
+  isUserInOrganization,
+  projectAccessSelection,
+} from './checkProjectAuth';
+
+type DocumentCollaborator = { id: string };
+type ProjectMember = { id: string };
+type OrganizationMember = { userId: string; role: 'OWNER' | 'ADMIN' | 'MEMBER' };
+
+const documentAccessSelection = {
+  id: true,
+  ownerId: true,
+  isPublic: true,
+  collaborators: {
+    select: {
+      id: true,
+    },
+  },
+  project: {
+    select: projectAccessSelection,
+  },
+};
+
+const fetchDocumentWithProject = async (id: string) =>
+  prisma.document.findUnique({
+    where: { id },
+    select: documentAccessSelection,
+  });
+
+const fetchProjectById = async (projectId: string) =>
+  prisma.project.findUnique({
+    where: { id: projectId },
+    select: projectAccessSelection,
+  });
 
 // Check if user can view a document
 export const canViewDocument = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    // Admin can view all documents
-    if (req.user.role === 'admin') {
+    if (req.user?.role === 'admin') {
       return next();
     }
 
-    const document = await DocumentModel.findById(id);
+    const document = await fetchDocumentWithProject(id);
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    // Public documents can be viewed by anyone
     if (document.isPublic) {
       return next();
     }
 
-    // Check if user is the owner
-    if (document.owner.toString() === userId) {
+    if (document.ownerId === userId) {
       return next();
     }
 
-    // Check if user is a collaborator
-    if (document.collaborators && document.collaborators.map(c => c.toString()).includes(userId)) {
+    if (
+      document.collaborators.some(
+        (collaborator: DocumentCollaborator) => collaborator.id === userId
+      )
+    ) {
       return next();
     }
 
-    // Check if document belongs to a project the user has access to
-    if (document.project) {
-      const project = await Project.findById(document.project);
-      if (project) {
-        // Check if user is project owner
-        if (project.owner.toString() === userId) {
-          return next();
-        }
+    const project = document.project;
 
-        // Check if user is a project member
-        if (project.members.map(m => m.toString()).includes(userId)) {
-          return next();
-        }
+    if (project) {
+      if (project.ownerId === userId) {
+        return next();
+      }
 
-        // Check if user is in the project's organization (any role can view)
-        if (project.organization) {
-          const org = await Organization.findById(project.organization);
-          if (org && org.members.some(m => m.user.toString() === userId)) {
-            return next();
-          }
-        }
+      if (project.members.some((member: ProjectMember) => member.id === userId)) {
+        return next();
+      }
+
+      if (isUserInOrganization(project.organization, userId)) {
+        return next();
       }
     }
 
     return res.status(403).json({ message: 'Not authorized to view this document' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize document access' });
   }
 };
 
@@ -70,34 +99,29 @@ export const canEditDocument = async (req: AuthRequest, res: Response, next: Nex
   const { id } = req.params;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    const document = await DocumentModel.findById(id);
+    const document = await fetchDocumentWithProject(id);
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    // Check if user is the owner
-    if (document.owner.toString() === userId) {
+    if (document.ownerId === userId) {
       return next();
     }
 
-    // Check if user is organization owner (if document is in a project with org)
-    if (document.project) {
-      const project = await Project.findById(document.project);
-      if (project && project.organization) {
-        const org = await Organization.findById(project.organization);
-        if (org) {
-          const member = org.members.find(m => m.user.toString() === userId);
-          if (member && member.role === 'owner') {
-            return next();
-          }
-        }
-      }
+    const project = document.project;
+
+    if (project && isOrganizationOwner(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Only document owner can edit this document' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize document update' });
   }
 };
 
@@ -106,74 +130,68 @@ export const canDeleteDocument = async (req: AuthRequest, res: Response, next: N
   const { id } = req.params;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    const document = await DocumentModel.findById(id);
+    const document = await fetchDocumentWithProject(id);
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    // Check if user is the document owner
-    if (document.owner.toString() === userId) {
+    if (document.ownerId === userId) {
       return next();
     }
 
-    // Check if user is organization owner (if document is in a project with org)
-    if (document.project) {
-      const project = await Project.findById(document.project);
-      if (project && project.organization) {
-        const org = await Organization.findById(project.organization);
-        if (org) {
-          const member = org.members.find(m => m.user.toString() === userId);
-          if (member && member.role === 'owner') {
-            return next();
-          }
-        }
-      }
+    const project = document.project;
+
+    if (project && isOrganizationOwner(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Only document owner can delete this document' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to authorize document deletion' });
   }
 };
 
 // Validate user can create document (owner only)
-export const validateDocumentProject = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const validateDocumentProject = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   const { project: projectId } = req.body;
   const userId = req.userId;
 
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authorized' });
+  }
+
   try {
-    // If no project specified, only owner role can create personal documents
     if (!projectId) {
-      if (req.user.role === 'owner' || req.user.role === 'admin') {
+      if (req.user?.role === 'owner' || req.user?.role === 'admin') {
         return next();
       }
       return res.status(403).json({ message: 'Only owners or admins can create documents' });
     }
 
-    const project = await Project.findById(projectId);
+    const project = await fetchProjectById(projectId);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check if user is project owner
-    if (project.owner.toString() === userId) {
+    if (project.ownerId === userId) {
       return next();
     }
 
-    // Check if user is organization owner
-    if (project.organization) {
-      const org = await Organization.findById(project.organization);
-      if (org) {
-        const member = org.members.find(m => m.user.toString() === userId);
-        if (member && member.role === 'owner') {
-          return next();
-        }
-      }
+    if (isOrganizationOwner(project.organization, userId)) {
+      return next();
     }
 
     return res.status(403).json({ message: 'Only owners can create documents' });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message || 'Unable to validate document permissions' });
   }
 };

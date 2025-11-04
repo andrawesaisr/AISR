@@ -1,5 +1,4 @@
 import express, { Express, Request, Response } from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import projectRoutes from './routes/projects';
@@ -10,9 +9,9 @@ import commentRoutes from './routes/comments';
 import userRoutes from './routes/users';
 import sprintRoutes from './routes/sprints';
 import organizationRoutes from './routes/organizations';
-import Organization from './models/Organization';
 import { auth } from './middleware/auth';
 import { verifyEmailConfig } from './utils/emailService';
+import prisma from './prismaClient';
 
 dotenv.config();
 
@@ -21,39 +20,6 @@ const port = process.env.PORT || 5001;
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
-
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
-  console.error("MONGODB_URI is not defined in the .env file");
-  process.exit(1);
-}
-
-mongoose.connect(uri)
-  .then(async () => {
-    console.log('MongoDB database connection established successfully');
-    verifyEmailConfig();
-
-    try {
-      await Organization.collection.dropIndex('invitations.token_1');
-      console.log('Dropped legacy invitations.token_1 index');
-    } catch (err: any) {
-      if (err?.codeName !== 'IndexNotFound' && err?.code !== 27) {
-        console.warn('Unable to drop legacy invitations index:', err.message || err);
-      }
-    }
-
-    try {
-      await Organization.collection.createIndex(
-        { 'invitations.token': 1 },
-        { unique: true, sparse: true, name: 'invitations.token_1' }
-      );
-      console.log('Ensured invitations.token_1 index');
-    } catch (err) {
-      console.error('Failed to create invitations index', err);
-    }
-  })
-  .catch(err => console.log(err));
 
 app.use('/projects', projectRoutes);
 app.use('/tasks', taskRoutes);
@@ -68,6 +34,38 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!');
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port: ${port}`);
+async function start() {
+  if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL is not defined in the environment');
+    process.exit(1);
+  }
+
+  try {
+    await prisma.$connect();
+    console.log('PostgreSQL connection established successfully');
+    verifyEmailConfig();
+
+    app.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to initialize application', error);
+    process.exit(1);
+  }
+}
+
+start();
+
+const shutdownSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
+
+shutdownSignals.forEach((signal) => {
+  process.on(signal, async () => {
+    try {
+      await prisma.$disconnect();
+    } catch (error) {
+      console.error('Error during Prisma disconnect', error);
+    } finally {
+      process.exit(0);
+    }
+  });
 });

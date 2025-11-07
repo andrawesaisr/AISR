@@ -6,7 +6,7 @@ const API_URL =   'http://localhost:5001';
 
 interface OrganizationMember {
   user: {
-    _id: string;
+    id: string;
     username: string;
     email: string;
     avatar?: string;
@@ -17,11 +17,11 @@ interface OrganizationMember {
 }
 
 interface Invitation {
-  _id: string;
+  id: string;
   email: string;
   role: 'admin' | 'member';
   invitedBy: {
-    _id: string;
+    id: string;
     username: string;
   };
   token: string;
@@ -31,7 +31,7 @@ interface Invitation {
 }
 
 interface Organization {
-  _id: string;
+  id: string;
   name: string;
   description?: string;
   members: OrganizationMember[];
@@ -124,8 +124,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const updateOrganization = async (id: string, data: Partial<Organization>) => {
     const response = await axios.patch(`${API_URL}/organizations/${id}`, data, getAuthHeaders());
-    setOrganizations(organizations.map(org => org._id === id ? response.data : org));
-    if (currentOrganization?._id === id) {
+    setOrganizations(organizations.map(org => org.id === id ? response.data : org));
+    if (currentOrganization?.id === id) {
       setCurrentOrganization(response.data);
     }
     return response.data;
@@ -133,8 +133,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const deleteOrganization = async (id: string) => {
     await axios.delete(`${API_URL}/organizations/${id}`, getAuthHeaders());
-    setOrganizations(organizations.filter(org => org._id !== id));
-    if (currentOrganization?._id === id) {
+    setOrganizations(organizations.filter(org => org.id !== id));
+    if (currentOrganization?.id === id) {
       setCurrentOrganization(null);
     }
   };

@@ -36,6 +36,36 @@ const parseDateInput = (value: unknown) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+// Map display strings to Prisma enum values
+const mapTaskStatus = (status: string): any => {
+  const statusMap: Record<string, string> = {
+    'To Do': 'TO_DO',
+    'In Progress': 'IN_PROGRESS',
+    'Done': 'DONE',
+  };
+  return statusMap[status] || 'TO_DO';
+};
+
+const mapTaskPriority = (priority: string): any => {
+  const priorityMap: Record<string, string> = {
+    'Low': 'LOW',
+    'Medium': 'MEDIUM',
+    'High': 'HIGH',
+    'Urgent': 'URGENT',
+  };
+  return priorityMap[priority] || 'MEDIUM';
+};
+
+const mapTaskType = (type: string): any => {
+  const typeMap: Record<string, string> = {
+    'Story': 'STORY',
+    'Bug': 'BUG',
+    'Task': 'TASK',
+    'Epic': 'EPIC',
+  };
+  return typeMap[type] || 'TASK';
+};
+
 // Get all tasks for a project
 router.get(
   '/project/:projectId',
@@ -87,8 +117,8 @@ router.post('/', auth, canCreateTask, async (req: AuthRequest, res: Response) =>
         description: req.body.description,
         projectId: req.body.project,
         assigneeId: assigneeId ?? null,
-        status: req.body.status || 'To Do',
-        priority: req.body.priority || 'Medium',
+        status: mapTaskStatus(req.body.status || 'To Do'),
+        priority: mapTaskPriority(req.body.priority || 'Medium'),
         dueDate: parseDateInput(req.body.dueDate),
         reporterId: req.userId ?? null,
         tags: Array.isArray(req.body.tags) ? req.body.tags : [],
@@ -103,7 +133,7 @@ router.post('/', auth, canCreateTask, async (req: AuthRequest, res: Response) =>
           typeof req.body.sprint === 'string' && req.body.sprint.trim().length > 0
             ? req.body.sprint
             : null,
-        type: req.body.type || 'Task',
+        type: mapTaskType(req.body.type || 'Task'),
         epicLinkId:
           typeof req.body.epicLink === 'string' && req.body.epicLink.trim().length > 0
             ? req.body.epicLink
@@ -137,8 +167,8 @@ router.patch('/:id', auth, canEditTask, async (req: AuthRequest, res: Response) 
           : null;
       data.assignee = assigneeId ? { connect: { id: assigneeId } } : { disconnect: true };
     }
-    if (req.body.status !== undefined) data.status = req.body.status;
-    if (req.body.priority !== undefined) data.priority = req.body.priority;
+    if (req.body.status !== undefined) data.status = mapTaskStatus(req.body.status);
+    if (req.body.priority !== undefined) data.priority = mapTaskPriority(req.body.priority);
 
     if (req.body.dueDate !== undefined) {
       const dueDate = parseDateInput(req.body.dueDate);
@@ -175,7 +205,7 @@ router.patch('/:id', auth, canEditTask, async (req: AuthRequest, res: Response) 
     }
 
     if (req.body.type !== undefined) {
-      data.type = req.body.type;
+      data.type = mapTaskType(req.body.type);
     }
 
     if (req.body.epicLink !== undefined) {

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useOrganization } from '../context/OrganizationContext';
 import { useAuth } from '../context/AuthContext';
-import { Building2, Mail, CheckCircle, XCircle, Clock, Lock } from 'lucide-react';
+import { BuildingOffice2Icon as Building2, EnvelopeIcon as Mail, CheckCircleIcon as CheckCircle, XCircleIcon as XCircle, ClockIcon as Clock, LockClosedIcon as Lock } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import LoadingState from '../components/LoadingState';
 
@@ -149,7 +149,7 @@ const InvitePage: React.FC = () => {
       const organization = await acceptInvitation(token!);
       setSuccess(true);
       setTimeout(() => {
-        navigate(`/organizations/${organization._id}`);
+        navigate(`/organizations/${organization.id}`);
       }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to accept invitation');
@@ -166,7 +166,7 @@ const InvitePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
-          <XCircle size={64} className="mx-auto text-red-500 mb-4" />
+          <XCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Invitation</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
@@ -184,7 +184,7 @@ const InvitePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
-          <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
+          <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Aboard!</h1>
           <p className="text-gray-600 mb-4">
             You've successfully joined <strong>{inviteDetails.organizationName}</strong>
@@ -200,7 +200,7 @@ const InvitePage: React.FC = () => {
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
         <div className="text-center mb-6">
           <div className="bg-gradient-to-br from-blue-500 to-purple-500 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <Building2 size={40} className="text-white" />
+            <Building2 className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">You're Invited!</h1>
           <p className="text-gray-600">
@@ -227,14 +227,14 @@ const InvitePage: React.FC = () => {
             <div>
               <span className="text-sm text-gray-500">Invited Email</span>
               <p className="text-gray-900 flex items-center gap-2">
-                <Mail size={16} />
+                <Mail className="w-4 h-4" />
                 {inviteDetails.email}
               </p>
             </div>
             <div>
               <span className="text-sm text-gray-500">Expires</span>
               <p className="text-gray-900 flex items-center gap-2">
-                <Clock size={16} />
+                <Clock className="w-4 h-4" />
                 {new Date(inviteDetails.expiresAt).toLocaleDateString()}
               </p>
             </div>
@@ -252,7 +252,7 @@ const InvitePage: React.FC = () => {
                   onClick={handleAcceptInvitation}
                   className="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition font-medium flex items-center justify-center gap-2"
                 >
-                  <Lock size={20} />
+                  <Lock className="w-5 h-5" />
                   Log In to Accept
                 </button>
                 <button

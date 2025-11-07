@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { UserPlus, Mail, CheckCircle, ArrowLeft, Shield } from 'lucide-react';
+import { UserPlusIcon as UserPlus, EnvelopeIcon as Mail, CheckCircleIcon as CheckCircle, ArrowLeftIcon as ArrowLeft, ShieldCheckIcon as Shield } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { register } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -58,7 +58,7 @@ const RegisterPage: React.FC = () => {
         try {
           const organization = await acceptInvitation(inviteToken);
           toast.success(`Joined ${organization.name}!`);
-          navigate(`/organizations/${organization._id}`);
+          navigate(`/organizations/${organization.id}`);
           return;
         } catch (err) {
           console.error('Error accepting invitation:', err);
@@ -85,7 +85,7 @@ const RegisterPage: React.FC = () => {
         <div className="relative flex w-full flex-col justify-between px-16 py-14 text-white">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-14 font-semibold text-white/80 hover:text-white">
-              <ArrowLeft size={16} />
+              <ArrowLeft className="w-4 h-4" />
               Back to site
             </Link>
           </div>
@@ -102,7 +102,7 @@ const RegisterPage: React.FC = () => {
             <ul className="mt-8 space-y-4 text-sm text-white/85">
               {commitments.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <CheckCircle size={18} className="mt-0.5 text-status-green" />
+                  <CheckCircle className="w-[18px] h-[18px] mt-0.5 text-status-green" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -110,7 +110,7 @@ const RegisterPage: React.FC = () => {
           </div>
           <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm">
             <div className="flex items-center gap-3 text-sm text-white/80">
-              <Shield size={20} className="text-white/90" />
+              <Shield className="w-5 h-5 text-white/90" />
               Enterprise-grade security with SSO, SCIM, and detailed audit logs.
             </div>
           </div>
@@ -131,7 +131,7 @@ const RegisterPage: React.FC = () => {
 
           {inviteEmail && (
             <div className="flex items-start gap-3 rounded-2xl border border-jira-200 bg-jira-50/60 p-4">
-              <Mail size={18} className="mt-0.5 text-jira-600" />
+              <Mail className="w-[18px] h-[18px] mt-0.5 text-jira-600" />
               <div className="text-left text-sm text-neutral-700">
                 <p className="font-semibold text-jira-700">Invitation detected</p>
                 <p className="text-xs text-neutral-600">
@@ -258,7 +258,7 @@ const RegisterPage: React.FC = () => {
                 disabled={loading}
                 className="btn-primary flex w-full items-center justify-center gap-2 text-14 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <UserPlus size={18} />
+                <UserPlus className="w-[18px] h-[18px]" />
                 {loading ? 'Creating account...' : 'Create account'}
               </button>
             </form>
@@ -271,7 +271,7 @@ const RegisterPage: React.FC = () => {
                 </Link>
               </p>
               <Link to="/" className="inline-flex items-center justify-center gap-2 text-12 text-neutral-600 hover:text-neutral-900">
-                <ArrowLeft size={14} />
+                <ArrowLeft className="w-[14px] h-[14px]" />
                 Back to marketing site
               </Link>
             </div>

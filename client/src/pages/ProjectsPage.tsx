@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FolderKanban, Plus, Search, Calendar, Users } from 'lucide-react';
+import {
+  FolderIcon,
+  PlusIcon,
+  MagnifyingGlassIcon,
+  CalendarIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { getProjects } from '../services/api';
 import PageHeader from '../components/PageHeader';
@@ -55,7 +61,7 @@ const ProjectsPage: React.FC = () => {
         subtitle="Plan, prioritize, and track everything your team is building."
         actions={
           <Link to="/new-project" className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
+            <PlusIcon className="h-4 w-4" />
             New project
           </Link>
         }
@@ -65,21 +71,21 @@ const ProjectsPage: React.FC = () => {
         <StatCard
           title="All projects"
           value={stats.total}
-          icon={FolderKanban}
+          icon={FolderIcon}
           tone="blue"
           description="Workspace-wide visibility."
         />
         <StatCard
           title="Linked to organizations"
           value={stats.withOrganization}
-          icon={Users}
+          icon={UserGroupIcon}
           tone="purple"
           description="Shared with teams you collaborate with."
         />
         <StatCard
           title="Personal spaces"
           value={stats.personal}
-          icon={Calendar}
+          icon={CalendarIcon}
           tone="amber"
           description="Your lightweight focus areas."
         />
@@ -87,7 +93,7 @@ const ProjectsPage: React.FC = () => {
 
       <div className="rounded-2xl border border-neutral-300 bg-white p-5 shadow-soft">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+          <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-500" />
           <input
             type="text"
             placeholder="Search projects by name..."
@@ -100,7 +106,7 @@ const ProjectsPage: React.FC = () => {
 
       {filteredProjects.length === 0 ? (
         <EmptyState
-          icon={FolderKanban}
+          icon={FolderIcon}
           title={searchQuery ? 'No projects match your search' : 'No projects yet'}
           description={
             searchQuery
@@ -118,7 +124,7 @@ const ProjectsPage: React.FC = () => {
               </button>
             ) : (
               <Link to="/new-project" className="btn-primary flex items-center gap-2">
-                <Plus size={18} />
+                <PlusIcon className="h-4 w-4" />
                 Create project
               </Link>
             )
@@ -128,13 +134,13 @@ const ProjectsPage: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {filteredProjects.map((project) => (
             <Link
-              key={project._id}
-              to={`/projects/${project._id}`}
+              key={project.id}
+              to={`/projects/${project.id}`}
               className="group flex h-full flex-col justify-between rounded-2xl border border-neutral-300 bg-white/80 p-5 shadow-jira transition-all duration-150 hover:-translate-y-1 hover:shadow-jira-hover"
             >
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-jira-50 text-jira-600">
-                  <FolderKanban size={22} />
+                  <FolderIcon className="h-6 w-6" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="truncate text-lg font-semibold text-neutral-1000">{project.name}</h3>

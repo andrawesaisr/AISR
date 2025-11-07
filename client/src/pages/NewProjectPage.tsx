@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FolderPlus, Building2, Users, Target, Calendar } from 'lucide-react';
+import {
+  FolderPlusIcon,
+  BuildingOfficeIcon,
+  FlagIcon as TargetIcon,
+  CalendarIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { createProject } from '../services/api';
 import { useOrganization } from '../context/OrganizationContext';
@@ -22,12 +27,12 @@ const NewProjectPage: React.FC = () => {
 
   useEffect(() => {
     if (!organization && organizations.length === 1) {
-      setOrganization(organizations[0]._id);
+      setOrganization(organizations[0].id);
     }
   }, [organization, organizations]);
 
   const selectedOrg = useMemo(
-    () => organizations.find((org) => org._id === organization),
+    () => organizations.find((org) => org.id === organization),
     [organization, organizations]
   );
   const availableMembers = selectedOrg?.members || [];
@@ -45,7 +50,7 @@ const NewProjectPage: React.FC = () => {
       }
       const project = await createProject(projectData);
       toast.success('Project created successfully!');
-      navigate(`/projects/${project._id}`);
+      navigate(`/projects/${project.id}`);
     } catch (err) {
       console.error(err);
       toast.error(getErrorMessage(err, 'Failed to create project'));
@@ -106,7 +111,7 @@ const NewProjectPage: React.FC = () => {
               </div>
               <div className="md:col-span-2">
                 <label htmlFor="organization" className="mb-2 flex items-center gap-2 text-12 font-semibold uppercase tracking-wide text-neutral-700">
-                  <Building2 size={16} />
+                  <BuildingOfficeIcon className="h-4 w-4" />
                   Organization
                 </label>
                 <select
@@ -120,7 +125,7 @@ const NewProjectPage: React.FC = () => {
                 >
                   <option value="">Personal project</option>
                   {organizations.map((org) => (
-                    <option key={org._id} value={org._id}>
+                    <option key={org.id} value={org.id}>
                       {org.name} • {org.members.length} member{org.members.length === 1 ? '' : 's'}
                     </option>
                   ))}
@@ -144,13 +149,13 @@ const NewProjectPage: React.FC = () => {
                 <div className="max-h-52 space-y-2 overflow-y-auto rounded-2xl border border-neutral-300 bg-neutral-50 p-3">
                   {availableMembers.map((member) => (
                     <label
-                      key={member.user._id}
+                      key={member.user.id}
                       className="flex cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-white px-3 py-2 transition hover:border-jira-300 hover:bg-jira-50"
                     >
                       <input
                         type="checkbox"
-                        checked={selectedMembers.includes(member.user._id)}
-                        onChange={() => toggleMember(member.user._id)}
+                        checked={selectedMembers.includes(member.user.id)}
+                        onChange={() => toggleMember(member.user.id)}
                         className="h-4 w-4 rounded border-neutral-400 text-jira-500 focus:ring-jira-500"
                       />
                       <div className="flex flex-1 items-center gap-3">
@@ -184,7 +189,7 @@ const NewProjectPage: React.FC = () => {
                 disabled={loading}
                 className="btn-primary flex items-center gap-2 text-14 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <FolderPlus size={18} />
+                <FolderPlusIcon className="h-5 w-5" />
                 {loading ? 'Creating...' : 'Create project'}
               </button>
             </div>
@@ -208,7 +213,7 @@ const NewProjectPage: React.FC = () => {
           )}
           <div className="rounded-2xl border border-jira-200 bg-jira-50/60 p-5">
             <div className="flex items-start gap-3">
-              <Target size={20} className="mt-1 text-jira-600" />
+              <TargetIcon className="mt-1 h-5 w-5 text-jira-600" />
               <div>
                 <h3 className="text-sm font-semibold text-neutral-900">Kickoff checklist</h3>
                 <p className="mt-1 text-xs text-neutral-600">
@@ -220,7 +225,7 @@ const NewProjectPage: React.FC = () => {
 
           <div className="rounded-2xl border border-neutral-200 bg-neutral-100 p-5">
             <div className="flex items-start gap-3">
-              <Calendar size={20} className="mt-1 text-neutral-700" />
+              <CalendarIcon className="mt-1 h-5 w-5 text-neutral-700" />
               <div>
                 <h3 className="text-sm font-semibold text-neutral-900">Set the rhythm</h3>
                 <p className="mt-1 text-xs text-neutral-600">
@@ -238,7 +243,7 @@ const NewProjectPage: React.FC = () => {
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {availableMembers.slice(0, 6).map((member) => (
-                  <span key={member.user._id} className="pill bg-neutral-200 text-neutral-700">
+                  <span key={member.user.id} className="pill bg-neutral-200 text-neutral-700">
                     {member.user.username}
                   </span>
                 ))}

@@ -173,7 +173,7 @@ export const validateProjectOrganization = async (
   }
 
   try {
-    if (!organization) {
+    if (!organization || organization === '') {
       if (req.user?.role === 'owner' || req.user?.role === 'admin') {
         return next();
       }

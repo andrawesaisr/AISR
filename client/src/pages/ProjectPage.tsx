@@ -1,20 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
-  Plus,
-  LayoutGrid,
-  List,
-  Calendar,
-  MessageSquare,
-  Trash2,
-  GripVertical,
-  ClipboardList,
-  CheckCircle2,
-  Clock,
-  FolderKanban,
-  Users,
-} from 'lucide-react';
+  ArrowLeftIcon,
+  PlusIcon as Plus,
+  Squares2X2Icon,
+  ListBulletIcon,
+  CalendarIcon as Calendar,
+  ChatBubbleOvalLeftEllipsisIcon as MessageSquare,
+  TrashIcon as Trash2,
+  Bars3Icon as GripVertical,
+  ClipboardDocumentListIcon as ClipboardList,
+  CheckCircleIcon,
+  ClockIcon,
+  FolderIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -95,7 +95,7 @@ const ProjectPage: React.FC = () => {
       const organizationId =
         typeof project.organization === 'string'
           ? project.organization
-          : project.organization._id;
+          : project.organization.id;
 
       if (!organizationId) {
         setOrganizationMembers([]);
@@ -120,13 +120,13 @@ const ProjectPage: React.FC = () => {
     const map = new Map<string, any>();
 
     const addUser = (user: any) => {
-      if (!user || !user._id) return;
-      map.set(user._id, user);
+      if (!user || !user.id) return;
+      map.set(user.id, user);
     };
 
     if (project?.owner) {
       if (typeof project.owner === 'string') {
-        const match = organizationMembers.find((member) => member?._id === project.owner);
+        const match = organizationMembers.find((member) => member?.id === project.owner);
         if (match) addUser(match);
       } else {
         addUser(project.owner);
@@ -135,7 +135,7 @@ const ProjectPage: React.FC = () => {
 
     (project?.members || []).forEach((member: any) => {
       if (typeof member === 'string') {
-        const match = organizationMembers.find((orgMember) => orgMember?._id === member);
+        const match = organizationMembers.find((orgMember) => orgMember?.id === member);
         if (match) addUser(match);
       } else {
         addUser(member);
@@ -170,10 +170,13 @@ const ProjectPage: React.FC = () => {
 
   const handleUpdateTask = async (taskId: string, updates: any) => {
     try {
-      await updateTask(taskId, updates);
-      fetchTasks();
+      console.log('Updating task with:', updates);
+      const result = await updateTask(taskId, updates);
+      console.log('Update result:', result);
+      await fetchTasks();
       toast.success('Task updated!');
     } catch (err) {
+      console.error('Update error:', err);
       toast.error(getErrorMessage(err, 'Failed to update task'));
     }
   };
@@ -182,7 +185,7 @@ const ProjectPage: React.FC = () => {
     if (!confirm('Are you sure you want to delete this task?')) return;
     try {
       await deleteTask(taskId);
-      setTasks(tasks.filter(t => t._id !== taskId));
+      setTasks(tasks.filter(t => t.id !== taskId));
       setShowTaskDetail(false);
       toast.success('Task deleted');
     } catch (err) {
@@ -194,7 +197,7 @@ const ProjectPage: React.FC = () => {
     setSelectedTask(task);
     setShowTaskDetail(true);
     try {
-      const taskComments = await getCommentsForTask(task._id);
+      const taskComments = await getCommentsForTask(task.id);
       setComments(taskComments);
     } catch (err) {
       console.error(err);
@@ -205,7 +208,7 @@ const ProjectPage: React.FC = () => {
     e.preventDefault();
     if (!selectedTask || !newComment.trim()) return;
     try {
-      const comment = await createComment({ content: newComment, task: selectedTask._id });
+      const comment = await createComment({ content: newComment, task: selectedTask.id });
       setComments([comment, ...comments]);
       setNewComment('');
       toast.success('Comment added');
@@ -225,19 +228,19 @@ const ProjectPage: React.FC = () => {
     if (!over) return;
 
     const taskId = active.id as string;
-    const targetTask = tasks.find((t) => t._id === over.id);
+    const targetTask = tasks.find((t) => t.id === over.id);
     const targetStatus = targetTask ? targetTask.status : (over.id as string);
 
-    if (!['To Do', 'In Progress', 'Done'].includes(targetStatus)) {
+    if (!['To Do', 'In Progress', 'Done', 'TO_DO', 'IN_PROGRESS', 'DONE'].includes(targetStatus)) {
       return;
     }
 
-    const task = tasks.find((t) => t._id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === targetStatus) return;
 
     // Optimistic update
     setTasks((prev) =>
-      prev.map((t) => (t._id === taskId ? { ...t, status: targetStatus } : t))
+      prev.map((t) => (t.id === taskId ? { ...t, status: targetStatus } : t))
     );
 
     try {
@@ -251,9 +254,9 @@ const ProjectPage: React.FC = () => {
 
   const columns = useMemo(
     () => ({
-      'To Do': tasks.filter((task) => task.status === 'To Do'),
-      'In Progress': tasks.filter((task) => task.status === 'In Progress'),
-      'Done': tasks.filter((task) => task.status === 'Done'),
+      'To Do': tasks.filter((task) => task.status === 'TO_DO' || task.status === 'To Do'),
+      'In Progress': tasks.filter((task) => task.status === 'IN_PROGRESS' || task.status === 'In Progress'),
+      'Done': tasks.filter((task) => task.status === 'DONE' || task.status === 'Done'),
     }),
     [tasks]
   );
@@ -274,12 +277,12 @@ const ProjectPage: React.FC = () => {
   if (!project) {
     return (
       <EmptyState
-        icon={FolderKanban}
+        icon={FolderIcon}
         title="Project not found"
         description="This project may have been removed or you no longer have access."
         action={
           <button onClick={() => navigate('/projects')} className="btn-primary flex items-center gap-2">
-            <ArrowLeft size={16} />
+            <ArrowLeftIcon className="h-4 w-4" />
             Back to projects
           </button>
         }
@@ -297,6 +300,32 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const getStatusDisplay = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'TO_DO': 'To Do',
+      'IN_PROGRESS': 'In Progress',
+      'DONE': 'Done',
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusClass = (status: string) => {
+    const normalizedStatus = getStatusDisplay(status);
+    if (normalizedStatus === 'Done') return 'badge-done';
+    if (normalizedStatus === 'In Progress') return 'badge-progress';
+    return 'badge-todo';
+  };
+
+  const getPriorityDisplay = (priority: string) => {
+    const priorityMap: Record<string, string> = {
+      'LOW': 'Low',
+      'MEDIUM': 'Medium',
+      'HIGH': 'High',
+      'URGENT': 'Urgent',
+    };
+    return priorityMap[priority] || priority;
+  };
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -307,19 +336,19 @@ const ProjectPage: React.FC = () => {
         }
         actions={
           <button onClick={() => setShowTaskModal(true)} className="btn-primary flex items-center gap-2">
-            <Plus size={16} />
+            <Plus className="h-4 w-4" />
             New task
           </button>
         }
       >
         <div className="flex flex-wrap items-center gap-2 text-11 text-neutral-600">
           <button onClick={() => navigate('/projects')} className="btn-ghost flex items-center gap-2 text-11 font-semibold uppercase tracking-wide">
-            <ArrowLeft size={14} />
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
             Back to projects
           </button>
           {project.organization?.name && (
             <span className="pill bg-neutral-200 text-neutral-800">
-              <Users size={12} />
+              <UserGroupIcon className="h-3 w-3" />
               {project.organization.name}
             </span>
           )}
@@ -343,14 +372,14 @@ const ProjectPage: React.FC = () => {
         <StatCard
           title="In progress"
           value={statusCounts.inProgress}
-          icon={Clock}
+          icon={ClockIcon}
           tone="purple"
           description="Actively moving forward."
         />
         <StatCard
           title="Done"
           value={statusCounts.done}
-          icon={CheckCircle2}
+          icon={CheckCircleIcon}
           tone="green"
           description="Celebrate the wins."
         />
@@ -366,7 +395,7 @@ const ProjectPage: React.FC = () => {
                 : 'text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            <LayoutGrid size={16} />
+            <Squares2X2Icon className="h-4 w-4" />
             Board
           </button>
           <button
@@ -377,7 +406,7 @@ const ProjectPage: React.FC = () => {
                 : 'text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            <List size={16} />
+            <ListBulletIcon className="h-4 w-4" />
             List
           </button>
         </div>
@@ -394,14 +423,16 @@ const ProjectPage: React.FC = () => {
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {Object.entries(columns).map(([status, statusTasks]) => (
               <DroppableColumn key={status} id={status} title={status} count={statusTasks.length}>
-                <SortableContext items={statusTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={statusTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-3 min-h-[200px]">
                     {statusTasks.map((task) => (
                       <SortableTaskCard
-                        key={task._id}
+                        key={task.id}
                         task={task}
                         onClick={() => openTaskDetail(task)}
                         getPriorityColor={getPriorityColor}
+                        getStatusDisplay={getStatusDisplay}
+                        getStatusClass={getStatusClass}
                       />
                     ))}
                   </div>
@@ -412,8 +443,10 @@ const ProjectPage: React.FC = () => {
           <DragOverlay>
             {activeId ? (
               <TaskCard
-                task={tasks.find(t => t._id === activeId)!}
+                task={tasks.find(t => t.id === activeId)!}
                 getPriorityColor={getPriorityColor}
+                getStatusDisplay={getStatusDisplay}
+                getStatusClass={getStatusClass}
                 isDragging
               />
             ) : null}
@@ -428,7 +461,7 @@ const ProjectPage: React.FC = () => {
             <div className="divide-y divide-neutral-200">
               {tasks.map((task) => (
                 <div
-                  key={task._id}
+                  key={task.id}
                   onClick={() => openTaskDetail(task)}
                   className="flex flex-wrap items-start justify-between gap-4 p-5 transition hover:bg-neutral-100/60 cursor-pointer"
                 >
@@ -440,8 +473,8 @@ const ProjectPage: React.FC = () => {
                       </p>
                     )}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
-                        {task.status}
+                      <span className={`badge ${getStatusClass(task.status)}`}>
+                        {getStatusDisplay(task.status)}
                       </span>
                       {task.priority && (
                         <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
@@ -450,7 +483,7 @@ const ProjectPage: React.FC = () => {
                       )}
                       {task.dueDate && (
                         <span className="pill bg-neutral-200 text-neutral-700">
-                          <Calendar size={12} />
+                          <Calendar className="w-3 h-3" />
                           {new Date(task.dueDate).toLocaleDateString()}
                         </span>
                       )}
@@ -480,7 +513,7 @@ const ProjectPage: React.FC = () => {
                 description="Kick off the project by creating tasks and assigning owners."
                 action={
                   <button onClick={() => setShowTaskModal(true)} className="btn-primary flex items-center gap-2">
-                    <Plus size={16} />
+                    <Plus className="w-4 h-4" />
                     Create task
                   </button>
                 }
@@ -551,7 +584,7 @@ const ProjectPage: React.FC = () => {
                       </option>
                     ) : (
                       assignableUsers.map((user) => (
-                        <option key={user._id} value={user._id}>
+                        <option key={user.id} value={user.id}>
                           {user.username} ({user.email})
                         </option>
                       ))
@@ -580,7 +613,7 @@ const ProjectPage: React.FC = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary flex items-center gap-2">
-                  <Plus size={16} />
+                  <Plus className="w-4 h-4" />
                   Create task
                 </button>
               </div>
@@ -598,8 +631,8 @@ const ProjectPage: React.FC = () => {
                 <h2 className="text-24 font-semibold text-neutral-1000">{selectedTask.title}</h2>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
-                    value={selectedTask.status}
-                    onChange={(e) => handleUpdateTask(selectedTask._id, { status: e.target.value })}
+                    value={selectedTask.status === 'TO_DO' ? 'To Do' : selectedTask.status === 'IN_PROGRESS' ? 'In Progress' : selectedTask.status === 'DONE' ? 'Done' : selectedTask.status}
+                    onChange={(e) => handleUpdateTask(selectedTask.id, { status: e.target.value })}
                     className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                   >
                     <option>To Do</option>
@@ -607,8 +640,8 @@ const ProjectPage: React.FC = () => {
                     <option>Done</option>
                   </select>
                   <select
-                    value={selectedTask.priority || 'Medium'}
-                    onChange={(e) => handleUpdateTask(selectedTask._id, { priority: e.target.value })}
+                    value={getPriorityDisplay(selectedTask.priority || 'Medium')}
+                    onChange={(e) => handleUpdateTask(selectedTask.id, { priority: e.target.value })}
                     className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                   >
                     <option>Low</option>
@@ -616,8 +649,8 @@ const ProjectPage: React.FC = () => {
                     <option>High</option>
                     <option>Urgent</option>
                   </select>
-                  <span className={`badge ${selectedTask.status === 'Done' ? 'badge-done' : selectedTask.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
-                    {selectedTask.status}
+                  <span className={`badge ${getStatusClass(selectedTask.status)}`}>
+                    {getStatusDisplay(selectedTask.status)}
                   </span>
                   {selectedTask.priority && (
                     <span className={`priority-badge ${getPriorityColor(selectedTask.priority)}`}>
@@ -627,10 +660,10 @@ const ProjectPage: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => handleDeleteTask(selectedTask._id)}
+                onClick={() => handleDeleteTask(selectedTask.id)}
                 className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
               >
-                <Trash2 size={18} />
+                <Trash2 className="w-[18px] h-[18px]" />
               </button>
             </div>
             <div className="space-y-8 px-6 py-6">
@@ -642,7 +675,7 @@ const ProjectPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="flex items-center gap-2 text-14 font-semibold text-neutral-900">
-                  <MessageSquare size={16} />
+                  <MessageSquare className="w-4 h-4" />
                   Comments ({comments.length})
                 </h3>
                 <form onSubmit={handleAddComment} className="mt-3 space-y-3">
@@ -654,14 +687,14 @@ const ProjectPage: React.FC = () => {
                   />
                   <div className="flex justify-end">
                     <button type="submit" className="btn-primary flex items-center gap-2">
-                      <MessageSquare size={16} />
+                      <MessageSquare className="w-4 h-4" />
                       Add comment
                     </button>
                   </div>
                 </form>
                 <div className="mt-6 space-y-3">
                   {comments.map((comment) => (
-                    <div key={comment._id} className="rounded-2xl border border-neutral-200 bg-neutral-0 p-4 shadow-sm">
+                    <div key={comment.id} className="rounded-2xl border border-neutral-200 bg-neutral-0 p-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-13 font-semibold text-neutral-900">
@@ -722,9 +755,11 @@ interface SortableTaskCardProps {
   task: any;
   onClick: () => void;
   getPriorityColor: (priority: string) => string;
+  getStatusDisplay: (status: string) => string;
+  getStatusClass: (status: string) => string;
 }
 
-const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getPriorityColor }) => {
+const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getPriorityColor, getStatusDisplay, getStatusClass }) => {
   const {
     attributes,
     listeners,
@@ -732,7 +767,7 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task._id });
+  } = useSortable({ id: task.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -758,7 +793,7 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
           {...listeners}
           className="mt-1 cursor-grab text-neutral-400 opacity-0 transition group-hover:opacity-100 active:cursor-grabbing hover:text-neutral-600"
         >
-          <GripVertical size={14} />
+          <GripVertical className="w-[14px] h-[14px]" />
         </button>
         <div className="flex-1 space-y-2" onClick={onClick}>
           <h4 className="text-14 font-semibold text-neutral-1000 leading-tight">{task.title}</h4>
@@ -766,8 +801,8 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
             <p className="text-12 text-neutral-700 line-clamp-2">{task.description}</p>
           )}
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`badge ${task.status === 'Done' ? 'badge-done' : task.status === 'In Progress' ? 'badge-progress' : 'badge-todo'}`}>
-              {task.status}
+            <span className={`badge ${getStatusClass(task.status)}`}>
+              {getStatusDisplay(task.status)}
             </span>
             {task.priority && (
               <span className={`priority-badge ${getPriorityColor(task.priority)}`}>
@@ -776,7 +811,7 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
             )}
             {task.dueDate && (
               <span className="text-11 text-neutral-600 flex items-center gap-1">
-                <Calendar size={10} />
+                <Calendar className="w-[10px] h-[10px]" />
                 {new Date(task.dueDate).toLocaleDateString()}
               </span>
             )}
@@ -798,10 +833,12 @@ const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onClick, getP
 interface TaskCardProps {
   task: any;
   getPriorityColor: (priority: string) => string;
+  getStatusDisplay: (status: string) => string;
+  getStatusClass: (status: string) => string;
   isDragging?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, isDragging }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, getStatusDisplay, getStatusClass, isDragging }) => {
   const assigneeName =
     task.assignee && typeof task.assignee === 'object' ? task.assignee.username : undefined;
   const assigneeInitial = assigneeName ? assigneeName.charAt(0).toUpperCase() : undefined;
@@ -828,7 +865,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, getPriorityColor, isDragging 
           )}
           {task.dueDate && (
             <span className="text-11 text-neutral-600 flex items-center gap-1">
-              <Calendar size={10} />
+              <Calendar className="w-[10px] h-[10px]" />
               {new Date(task.dueDate).toLocaleDateString()}
             </span>
           )}

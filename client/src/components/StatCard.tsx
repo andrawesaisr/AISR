@@ -1,10 +1,10 @@
 import React from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { HeroIcon } from '../types/icons';
 
 type StatCardProps = {
   title: string;
   value: React.ReactNode;
-  icon?: LucideIcon;
+  icon?: HeroIcon;
   description?: string;
   tone?: 'blue' | 'green' | 'purple' | 'amber' | 'neutral';
 };
@@ -38,7 +38,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description, to
         </div>
         {Icon && (
           <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${palette.wrapper}`}>
-            <Icon size={18} className={palette.icon} />
+            <Icon className={`h-5 w-5 ${palette.icon}`} />
           </div>
         )}
       </div>

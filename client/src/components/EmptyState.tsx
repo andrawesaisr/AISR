@@ -1,8 +1,8 @@
 import React from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { HeroIcon } from '../types/icons';
 
 type EmptyStateProps = {
-  icon: LucideIcon;
+  icon: HeroIcon;
   title: string;
   description: string;
   action?: React.ReactNode;
@@ -31,7 +31,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <div className="empty-state">
       <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl ${palette.wrapper}`}>
-        <Icon size={32} className={palette.icon} />
+        <Icon className={`h-8 w-8 ${palette.icon}`} />
       </div>
       <h3 className="empty-state-title">{title}</h3>
       <p className="empty-state-description">{description}</p>

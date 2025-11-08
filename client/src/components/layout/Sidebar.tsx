@@ -1,16 +1,15 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  FolderKanban, 
-  FileText, 
-  Presentation,
-  Users,
-  Building2,
-  Settings,
-  LogOut,
-  Plus
-} from 'lucide-react';
+  Squares2X2Icon as LayoutDashboard, 
+  FolderIcon as FolderKanban, 
+  DocumentTextIcon as FileText,
+  UsersIcon as Users,
+  BuildingOffice2Icon as Building2,
+  Cog6ToothIcon as Settings,
+  ArrowRightOnRectangleIcon as LogOut,
+  PlusIcon as Plus
+} from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar: React.FC = () => {
@@ -53,7 +52,7 @@ const Sidebar: React.FC = () => {
           to="/new-project" 
           className="btn-primary w-full gap-1 text-12"
         >
-          <Plus size={16} />
+          <Plus className="w-4 h-4" />
           <span>Create</span>
         </Link>
       </div>
@@ -69,7 +68,7 @@ const Sidebar: React.FC = () => {
               to={item.path}
               className={`sidebar-link ${active ? 'sidebar-link-active' : ''}`}
             >
-              <Icon size={16} />
+              <Icon className="w-4 h-4" />
               <span className="text-14">{item.label}</span>
             </Link>
           );
@@ -79,7 +78,7 @@ const Sidebar: React.FC = () => {
       {/* Bottom Actions - Jira Style */}
       <div className="px-2 py-2 border-t border-neutral-300 space-y-0.5">
         <Link to="/settings" className="sidebar-link">
-          <Settings size={16} />
+          <Settings className="w-4 h-4" />
           <span className="text-14">Settings</span>
         </Link>
         <button 
@@ -89,7 +88,7 @@ const Sidebar: React.FC = () => {
           }}
           className="sidebar-link w-full text-left text-status-red hover:bg-red-50"
         >
-          <LogOut size={16} />
+          <LogOut className="w-4 h-4" />
           <span className="text-14">Sign out</span>
         </button>
       </div>

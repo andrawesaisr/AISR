@@ -1,18 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
+import type { HeroIcon } from '../types/icons';
 import {
-  FolderKanban,
-  FileText,
-  Plus,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  ClipboardList,
-  CalendarClock,
-  ArrowRight,
-  Building2,
-} from 'lucide-react';
+  FolderIcon,
+  DocumentTextIcon,
+  PlusIcon,
+  ChartBarIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+  ArrowRightIcon,
+  BuildingOfficeIcon,
+} from '@heroicons/react/24/outline';
 import { getProjects, getDocuments, getTasksForProject } from '../services/api';
 
 type TaskStats = {
@@ -27,7 +27,7 @@ type QuickAction = {
   to: string;
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: HeroIcon;
   accent: string;
 };
 
@@ -228,28 +228,28 @@ const DashboardPage: React.FC = () => {
         to: '/new-project',
         title: 'Start a project',
         description: 'Create a space for your next initiative.',
-        icon: FolderKanban,
+        icon: FolderIcon,
         accent: 'from-jira-500 to-jira-400',
       },
       {
         to: '/documents',
         title: 'Capture notes',
         description: 'Draft meeting notes or plans in seconds.',
-        icon: FileText,
+        icon: DocumentTextIcon,
         accent: 'from-status-purple to-jira-500',
       },
       {
         to: '/my-tasks',
         title: 'Review tasks',
         description: 'See what needs your focus today.',
-        icon: ClipboardList,
+        icon: ClipboardDocumentListIcon,
         accent: 'from-status-blue to-jira-500',
       },
       {
         to: '/organizations',
         title: 'Create workspace',
         description: 'Invite teammates and manage permissions.',
-        icon: Building2,
+        icon: BuildingOfficeIcon,
         accent: 'from-status-purple to-status-blue',
       },
     ],
@@ -287,14 +287,14 @@ const DashboardPage: React.FC = () => {
                   to="/new-project"
                   className="inline-flex items-center gap-2 rounded-jira bg-white px-4 py-2 text-sm font-medium text-jira-600 transition-colors duration-150 hover:bg-neutral-0"
                 >
-                  <Plus size={16} />
+                  <PlusIcon className="h-4 w-4" />
                   Start a project
                 </Link>
                 <Link
                   to="/my-tasks"
                   className="inline-flex items-center gap-2 rounded-jira border border-white/40 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white/10"
                 >
-                  <ClipboardList size={16} />
+                  <ClipboardDocumentListIcon className="h-4 w-4" />
                   Review tasks
                 </Link>
               </div>
@@ -304,17 +304,17 @@ const DashboardPage: React.FC = () => {
                 {
                   label: 'Projects',
                   value: projects.length,
-                  icon: FolderKanban,
+                  icon: FolderIcon,
                 },
                 {
                   label: 'Documents',
                   value: documents.length,
-                  icon: FileText,
+                  icon: DocumentTextIcon,
                 },
                 {
                   label: 'Active tasks',
                   value: openTasks,
-                  icon: ClipboardList,
+                  icon: ClipboardDocumentListIcon,
                 },
               ].map(({ label, value, icon: Icon }) => (
                 <div
@@ -323,7 +323,7 @@ const DashboardPage: React.FC = () => {
                 >
                   <div className="flex items-center justify-between text-white/80">
                     <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
-                    <Icon size={18} />
+                    <Icon className="h-5 w-5" />
                   </div>
                   <p className="mt-4 text-3xl font-semibold text-white">{value}</p>
                   <p className="text-11 text-white/70">Workspace total</p>
@@ -341,7 +341,7 @@ const DashboardPage: React.FC = () => {
                 <p className="text-24 font-semibold text-neutral-1000">{completionRate}%</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-jira-50 text-jira-600">
-                <TrendingUp size={20} />
+                <ChartBarIcon className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-4 h-1.5 w-full rounded-full bg-neutral-200">
@@ -363,7 +363,7 @@ const DashboardPage: React.FC = () => {
                 <p className="text-24 font-semibold text-neutral-1000">{taskStats.inProgress}</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-status-blue">
-                <ClipboardList size={20} />
+                <ClipboardDocumentListIcon className="h-5 w-5" />
               </div>
             </div>
             <p className="mt-4 text-sm text-neutral-700">
@@ -377,7 +377,7 @@ const DashboardPage: React.FC = () => {
                 <p className="text-24 font-semibold text-neutral-1000">{taskStats.done}</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-status-green">
-                <CheckCircle2 size={20} />
+                <CheckCircleIcon className="h-5 w-5" />
               </div>
             </div>
             <p className="mt-4 text-sm text-neutral-700">
@@ -391,7 +391,7 @@ const DashboardPage: React.FC = () => {
                 <p className="text-24 font-semibold text-neutral-1000">{taskStats.dueSoon}</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-50 text-status-yellow">
-                <CalendarClock size={20} />
+                <CalendarDaysIcon className="h-5 w-5" />
               </div>
             </div>
             <p className="mt-4 text-sm text-neutral-700">
@@ -416,7 +416,7 @@ const DashboardPage: React.FC = () => {
                   <div
                     className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${action.accent} text-white`}
                   >
-                    <ActionIcon size={20} />
+                    <ActionIcon className="h-6 w-6" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-neutral-1000">{action.title}</p>
@@ -425,10 +425,7 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <span className="mt-6 inline-flex items-center gap-1 text-xs font-semibold text-jira-600">
                   Go there
-                  <ArrowRight
-                    size={16}
-                    className="transition-transform duration-150 group-hover:translate-x-1"
-                  />
+                  <ArrowRightIcon className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
                 </span>
               </Link>
             );
@@ -458,7 +455,7 @@ const DashboardPage: React.FC = () => {
                     className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors duration-150 hover:border-neutral-300 hover:bg-neutral-100"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-jira-50 text-jira-600">
-                      <FolderKanban size={20} />
+                      <FolderIcon className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold text-neutral-1000">{project.name}</p>
@@ -484,7 +481,7 @@ const DashboardPage: React.FC = () => {
                     Create your first project to start organizing work.
                   </p>
                   <Link to="/new-project" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-jira-600 hover:text-jira-500">
-                    <Plus size={16} />
+                    <PlusIcon className="h-4 w-4" />
                     New project
                   </Link>
                 </div>
@@ -504,14 +501,14 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="space-y-3">
               {recentDocuments.map((doc) => (
-                <Link
-                  key={doc._id}
-                  to={`/documents/${doc._id}`}
-                  className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors duration-150 hover:border-neutral-300 hover:bg-neutral-100"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-status-purple/10 text-status-purple">
-                    <FileText size={20} />
-                  </div>
+              <Link
+                key={doc._id}
+                to={`/documents/${doc._id}`}
+                className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors duration-150 hover:border-neutral-300 hover:bg-neutral-100"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-status-purple/10 text-status-purple">
+                  <DocumentTextIcon className="h-5 w-5" />
+                </div>
                   <div className="flex-1">
                     <p className="font-semibold text-neutral-1000">{doc.title}</p>
                     <p className="text-xs text-neutral-600">
@@ -535,7 +532,7 @@ const DashboardPage: React.FC = () => {
                     Capture meeting notes or ideas to build momentum.
                   </p>
                   <Link to="/documents" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-jira-600 hover:text-jira-500">
-                    <FileText size={16} />
+                    <DocumentTextIcon className="h-4 w-4" />
                     Create document
                   </Link>
                 </div>
@@ -567,8 +564,7 @@ const DashboardPage: React.FC = () => {
                   : projectId
                   ? projectLookup[projectId]?.name
                   : undefined;
-              const TaskIcon =
-                status === 'done' ? CheckCircle2 : status === 'in progress' ? Clock : Clock;
+              const TaskIcon = status === 'done' ? CheckCircleIcon : ClockIcon;
 
               return (
                 <Link
@@ -585,7 +581,7 @@ const DashboardPage: React.FC = () => {
                         : 'bg-neutral-200 text-neutral-800'
                     }`}
                   >
-                    <TaskIcon size={20} />
+                    <TaskIcon className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-neutral-1000">{task.title}</p>
@@ -629,7 +625,7 @@ const DashboardPage: React.FC = () => {
                   Create a task to track progress and share updates with teammates.
                 </p>
                 <Link to="/projects" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-jira-600 hover:text-jira-500">
-                  <FolderKanban size={16} />
+                  <FolderIcon className="h-4 w-4" />
                   View projects
                 </Link>
               </div>

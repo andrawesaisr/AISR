@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, FileText } from 'lucide-react';
+import {
+  ArrowLeftIcon,
+  ArrowDownOnSquareIcon,
+  DocumentTextIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -143,12 +147,12 @@ const DocumentPage: React.FC = () => {
   if (!document) {
     return (
       <EmptyState
-        icon={FileText}
+        icon={DocumentTextIcon}
         title="Document not found"
         description="This document might have been removed or you may not have access."
         action={
           <button onClick={() => navigate('/documents')} className="btn-primary flex items-center gap-2">
-            <ArrowLeft size={16} />
+            <ArrowLeftIcon className="h-4 w-4" />
             Back to documents
           </button>
         }
@@ -180,7 +184,7 @@ const DocumentPage: React.FC = () => {
             disabled={saving}
             className="btn-primary flex items-center gap-2 text-14 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Save size={18} />
+            <ArrowDownOnSquareIcon className="h-5 w-5" />
             {saving ? 'Saving...' : 'Save changes'}
           </button>
         }
@@ -190,7 +194,7 @@ const DocumentPage: React.FC = () => {
             onClick={() => navigate('/documents')}
             className="btn-ghost flex items-center gap-2 text-11 font-semibold uppercase tracking-wide"
           >
-            <ArrowLeft size={14} />
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
             Back to documents
           </button>
           <span className="pill bg-neutral-200 text-neutral-700">{docTypeLabel}</span>

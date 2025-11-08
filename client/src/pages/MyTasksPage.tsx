@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ClipboardList, CheckCircle2, Clock } from 'lucide-react';
+import { ClipboardDocumentListIcon as ClipboardList, CheckCircleIcon as CheckCircle2, ClockIcon as Clock } from '@heroicons/react/24/outline';
 import { getMyTasks } from '../services/api';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';

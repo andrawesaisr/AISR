@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Plus, Search, Trash2, FolderKanban, Sparkles, NotebookPen } from 'lucide-react';
+import { DocumentTextIcon as FileText, PlusIcon as Plus, MagnifyingGlassIcon as Search, TrashIcon as Trash2, FolderIcon as FolderKanban, SparklesIcon as Sparkles, PencilSquareIcon as NotebookPen } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { getDocuments, createDocument, deleteDocument, getProjects } from '../services/api';
 import { getErrorMessage } from '../utils/errors';
@@ -255,7 +255,7 @@ const DocumentsPage: React.FC = () => {
             }}
             className="btn-primary flex items-center gap-2"
           >
-            <Plus size={18} />
+            <Plus className="w-[18px] h-[18px]" />
             New document
           </button>
         }
@@ -286,7 +286,7 @@ const DocumentsPage: React.FC = () => {
 
       <div className="rounded-2xl border border-neutral-300 bg-white p-5 shadow-soft">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+          <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 w-[18px] h-[18px]" />
           <input
             type="text"
             placeholder="Search documents by title..."
@@ -313,7 +313,7 @@ const DocumentsPage: React.FC = () => {
               </button>
             ) : (
               <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
-                <Plus size={18} />
+                <Plus className="w-[18px] h-[18px]" />
                 Create document
               </button>
             )
@@ -335,7 +335,7 @@ const DocumentsPage: React.FC = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-status-purple/10 text-status-purple">
-                        <FileText size={22} />
+                        <FileText className="w-[22px] h-[22px]" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-neutral-1000">{doc.title}</h3>
@@ -375,7 +375,7 @@ const DocumentsPage: React.FC = () => {
                     }}
                     className="rounded-xl border border-red-200 px-3 py-1 text-12 font-semibold text-status-red opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 className="w-[14px] h-[14px]" />
                   </button>
                 </div>
               </div>
@@ -396,7 +396,7 @@ const DocumentsPage: React.FC = () => {
             <form onSubmit={handleCreateDocument} className="space-y-5 px-6 py-6">
               <div>
                 <p className="text-12 font-semibold uppercase tracking-wide text-neutral-700 mb-2 flex items-center gap-2">
-                  <Sparkles size={14} /> Start from template
+                  <Sparkles className="w-[14px] h-[14px]" /> Start from template
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {Object.values(templates).map((template) => (
@@ -411,7 +411,7 @@ const DocumentsPage: React.FC = () => {
                       }`}
                     >
                       <p className="text-13 font-semibold text-neutral-900 flex items-center gap-2">
-                        <NotebookPen size={14} />
+                        <NotebookPen className="w-[14px] h-[14px]" />
                         {template.label}
                       </p>
                       <p className="mt-1 text-11 text-neutral-600">{template.tags.join(', ')}</p>
@@ -514,7 +514,7 @@ const DocumentsPage: React.FC = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary flex items-center gap-2">
-                  <Plus size={16} />
+                  <Plus className="w-4 h-4" />
                   Create document
                 </button>
               </div>

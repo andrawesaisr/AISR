@@ -1,30 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FolderKanban,
-  FileText,
-  Presentation,
-  Zap,
-  Users,
-  Shield,
-  Target,
-  Sparkles,
-} from 'lucide-react';
+  FolderIcon,
+  DocumentTextIcon,
+  PresentationChartLineIcon,
+  BoltIcon,
+  UserGroupIcon,
+  ShieldCheckIcon,
+  FlagIcon as TargetIcon,
+  SparklesIcon,
+} from '@heroicons/react/24/outline';
 
 const HomePage: React.FC = () => {
   const features = [
     {
-      icon: FolderKanban,
+      icon: FolderIcon,
       title: 'Modern project hub',
       description: 'Plan sprints, track blockers, and keep work visible across teams.',
     },
     {
-      icon: FileText,
+      icon: DocumentTextIcon,
       title: 'Living documentation',
       description: 'Capture notes, specs, and decisions so context is always one click away.',
     },
     {
-      icon: Presentation,
+      icon: PresentationChartLineIcon,
       title: 'Aligned roadmaps',
       description: 'Connect strategy to delivery with timelines and progress summaries.',
     },
@@ -38,17 +38,17 @@ const HomePage: React.FC = () => {
 
   const pillars = [
     {
-      icon: Zap,
+      icon: BoltIcon,
       title: 'Fast by design',
       description: 'Snappy boards, instant search, and zero friction workflows keep teams moving.',
     },
     {
-      icon: Users,
+      icon: UserGroupIcon,
       title: 'Built for collaboration',
       description: 'Share context, leave updates, and co-create documents without losing focus.',
     },
     {
-      icon: Shield,
+      icon: ShieldCheckIcon,
       title: 'Enterprise-grade security',
       description: 'Granular roles, SSO, and audit trails ensure every data point stays protected.',
     },
@@ -80,7 +80,7 @@ const HomePage: React.FC = () => {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
           <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-10 px-6 text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-12 font-semibold uppercase tracking-[0.3em] text-white/70">
-              <Sparkles size={14} />
+              <SparklesIcon className="h-3.5 w-3.5" />
               Workspace OS
             </span>
             <h1 className="text-4xl font-semibold leading-tight md:text-6xl md:leading-tight">
@@ -98,7 +98,7 @@ const HomePage: React.FC = () => {
                 className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-jira border border-white/50 px-4 py-2 text-14 font-semibold text-white transition-colors hover:bg-white/10"
               >
                 View demo
-                <Target size={16} />
+                <TargetIcon className="h-4 w-4" />
               </Link>
             </div>
             <div className="grid w-full gap-6 rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm sm:grid-cols-3">
@@ -128,7 +128,7 @@ const HomePage: React.FC = () => {
                   className="card h-full rounded-2xl border border-neutral-200 bg-white/80 p-6 shadow-soft transition-transform duration-150 hover:-translate-y-1"
                 >
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-jira-50 text-jira-600">
-                    <Icon size={24} />
+                    <Icon className="h-6 w-6" />
                   </div>
                   <h3 className="text-lg font-semibold text-neutral-1000">{feature.title}</h3>
                   <p className="mt-2 text-sm text-neutral-700">{feature.description}</p>
@@ -150,16 +150,16 @@ const HomePage: React.FC = () => {
               {pillars.map((pillar) => {
                 const Icon = pillar.icon;
                 return (
-                  <div
-                    key={pillar.title}
-                    className="rounded-2xl border border-neutral-200 bg-neutral-100 p-6 transition hover:bg-neutral-0"
-                  >
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-jira-50 text-jira-600">
-                      <Icon size={24} />
-                    </div>
+                <div
+                  key={pillar.title}
+                  className="rounded-2xl border border-neutral-200 bg-neutral-100 p-6 transition hover:bg-neutral-0"
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-jira-50 text-jira-600">
+                    <Icon className="h-6 w-6" />
+                  </div>
                     <h3 className="text-lg font-semibold text-neutral-1000">{pillar.title}</h3>
                     <p className="mt-2 text-sm text-neutral-700">{pillar.description}</p>
-                  </div>
+                </div>
                 );
               })}
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, CheckCircle, ArrowLeft } from 'lucide-react';
+import { ArrowRightOnRectangleIcon as LogIn, CheckCircleIcon as CheckCircle, ArrowLeftIcon as ArrowLeft } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { login } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
         <div className="relative flex w-full flex-col justify-between px-16 py-14 text-white">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-14 font-semibold text-white/80 hover:text-white">
-              <ArrowLeft size={16} />
+              <ArrowLeft className="w-4 h-4" />
               Back to site
             </Link>
           </div>
@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
             <ul className="mt-8 space-y-4 text-sm text-white/85">
               {benefits.map((benefit) => (
                 <li key={benefit} className="flex items-start gap-3">
-                  <CheckCircle size={18} className="mt-0.5 text-status-green" />
+                  <CheckCircle className="w-[18px] h-[18px] mt-0.5 text-status-green" />
                   <span>{benefit}</span>
                 </li>
               ))}
@@ -120,7 +120,7 @@ const LoginPage: React.FC = () => {
                 disabled={loading}
                 className="btn-primary flex w-full items-center justify-center gap-2 text-14 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <LogIn size={18} />
+                <LogIn className="w-[18px] h-[18px]" />
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
@@ -133,7 +133,7 @@ const LoginPage: React.FC = () => {
                 </Link>
               </p>
               <Link to="/" className="inline-flex items-center justify-center gap-2 text-12 text-neutral-600 hover:text-neutral-900">
-                <ArrowLeft size={14} />
+                <ArrowLeft className="w-[14px] h-[14px]" />
                 Back to marketing site
               </Link>
             </div>

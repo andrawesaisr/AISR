@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../context/OrganizationContext';
-import { Building2, Plus, Users, Calendar, Trash2 } from 'lucide-react';
+import { BuildingOffice2Icon as Building2, PlusIcon as Plus, UsersIcon as Users, CalendarIcon as Calendar, TrashIcon as Trash2 } from '@heroicons/react/24/outline';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
@@ -60,7 +60,7 @@ const OrganizationsPage: React.FC = () => {
         subtitle="Group people, manage membership, and share workspaces across teams."
         actions={
           <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
+            <Plus className="w-[18px] h-[18px]" />
             New organization
           </button>
         }
@@ -97,7 +97,7 @@ const OrganizationsPage: React.FC = () => {
           description="Spin up an organization to invite teammates and share projects."
           action={
             <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
-              <Plus size={18} />
+              <Plus className="w-[18px] h-[18px]" />
               Create organization
             </button>
           }
@@ -117,7 +117,7 @@ const OrganizationsPage: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-jira-500 to-status-purple text-white">
-                      <Building2 size={22} />
+                      <Building2 className="w-[22px] h-[22px]" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-neutral-1000">{org.name}</h3>
@@ -134,7 +134,7 @@ const OrganizationsPage: React.FC = () => {
                       }}
                       className="rounded-xl border border-red-200 p-2 text-status-red opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -143,11 +143,11 @@ const OrganizationsPage: React.FC = () => {
                 )}
                 <div className="mt-6 flex items-center justify-between text-12 text-neutral-600">
                   <span className="pill bg-neutral-200 text-neutral-700">
-                    <Users size={12} />
+                    <Users className="w-3 h-3" />
                     {org.members.length} member{org.members.length === 1 ? '' : 's'}
                   </span>
                   <span className="pill bg-neutral-200 text-neutral-700">
-                    <Calendar size={12} />
+                    <Calendar className="w-3 h-3" />
                     {new Date(org.createdAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -203,7 +203,7 @@ const OrganizationsPage: React.FC = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary flex items-center gap-2">
-                  <Plus size={16} />
+                  <Plus className="w-4 h-4" />
                   Create
                 </button>
               </div>

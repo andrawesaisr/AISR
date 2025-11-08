@@ -2,21 +2,21 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOrganization } from '../context/OrganizationContext';
 import { 
-  Building2, 
-  ArrowLeft,
-  Users, 
-  Mail, 
-  UserPlus, 
-  Trash2, 
-  Crown,
-  Shield,
-  User,
-  Copy,
-  Check,
-  X,
-  Clock,
-  ClipboardList,
-} from 'lucide-react';
+  BuildingOffice2Icon as Building2, 
+  ArrowLeftIcon as ArrowLeft,
+  UsersIcon as Users, 
+  EnvelopeIcon as Mail, 
+  UserPlusIcon as UserPlus, 
+  TrashIcon as Trash2, 
+  TrophyIcon as Crown,
+  ShieldCheckIcon as Shield,
+  UserIcon as User,
+  ClipboardDocumentIcon as Copy,
+  CheckIcon as Check,
+  XMarkIcon as X,
+  ClockIcon as Clock,
+  ClipboardDocumentListIcon as ClipboardList,
+} from '@heroicons/react/24/outline';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
@@ -129,11 +129,11 @@ const OrganizationPage: React.FC = () => {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'owner':
-        return <Crown size={16} className="text-yellow-500" />;
+        return <Crown className="w-4 h-4 text-yellow-500" />;
       case 'admin':
-        return <Shield size={16} className="text-blue-500" />;
+        return <Shield className="w-4 h-4 text-blue-500" />;
       default:
-        return <User size={16} className="text-gray-500" />;
+        return <User className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -149,7 +149,7 @@ const OrganizationPage: React.FC = () => {
         description="This organization may have been removed or you might not have access."
         action={
           <button onClick={() => navigate('/organizations')} className="btn-primary flex items-center gap-2">
-            <ArrowLeft size={16} />
+            <ArrowLeft className="w-4 h-4" />
             Back to organizations
           </button>
         }
@@ -173,7 +173,7 @@ const OrganizationPage: React.FC = () => {
         actions={
           canInvite ? (
             <button onClick={() => setShowInviteModal(true)} className="btn-primary flex items-center gap-2">
-              <UserPlus size={18} />
+              <UserPlus className="w-[18px] h-[18px]" />
               Invite member
             </button>
           ) : undefined
@@ -262,7 +262,7 @@ const OrganizationPage: React.FC = () => {
                       onClick={() => handleRemoveMember(member.user._id, member.user.username)}
                       className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
@@ -279,7 +279,7 @@ const OrganizationPage: React.FC = () => {
       {pendingInvitations.length > 0 && (
         <div className="rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-soft">
           <div className="flex items-center gap-3">
-            <Mail size={20} className="text-status-yellow" />
+            <Mail className="w-5 h-5 text-status-yellow" />
             <div>
               <h2 className="text-18 font-semibold text-neutral-1000">
                 Pending invitations ({pendingInvitations.length})
@@ -301,7 +301,7 @@ const OrganizationPage: React.FC = () => {
                     Invited by {invitation.invitedBy.username} • {invitation.role}
                   </p>
                   <p className="flex items-center gap-1 text-11 text-neutral-500">
-                    <Clock size={12} />
+                    <Clock className="w-3 h-3" />
                     Expires {new Date(invitation.expiresAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -310,7 +310,7 @@ const OrganizationPage: React.FC = () => {
                     onClick={() => handleCancelInvitation(invitation._id, invitation.email)}
                     className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
                   >
-                    <X size={16} />
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -347,7 +347,7 @@ const OrganizationPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <button onClick={handleCopyLink} className="btn-primary flex flex-1 items-center justify-center gap-2">
-                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Copied!' : 'Copy link'}
                   </button>
                   <button
@@ -411,7 +411,7 @@ const OrganizationPage: React.FC = () => {
                     Cancel
                   </button>
                   <button type="submit" className="btn-primary flex items-center gap-2">
-                    <Mail size={16} />
+                    <Mail className="w-4 h-4" />
                     Send invitation
                   </button>
                 </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Users, Mail, Briefcase, Shield, UserPlus } from 'lucide-react';
+import { UsersIcon as Users, EnvelopeIcon as Mail, BriefcaseIcon as Briefcase, ShieldCheckIcon as Shield, UserPlusIcon as UserPlus } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { getUsers, updateUserRole } from '../services/api';
 import PageHeader from '../components/PageHeader';
@@ -85,7 +85,7 @@ const TeamPage: React.FC = () => {
         subtitle="View everyone in your workspace and adjust access levels."
         actions={
           <button className="btn-primary flex items-center gap-2">
-            <UserPlus size={16} />
+            <UserPlus className="w-4 h-4" />
             Invite member
           </button>
         }
@@ -152,7 +152,7 @@ const TeamPage: React.FC = () => {
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1.5 text-13 text-neutral-700">
-                      <Mail size={14} />
+                      <Mail className="w-[14px] h-[14px]" />
                       {user.email}
                     </div>
                   </td>

@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import prisma, { Prisma } from '../prismaClient';
+import { DocumentType } from '../generated/prisma/client';
 import { auth, AuthRequest } from '../middleware/auth';
 import {
   canViewDocument,
@@ -9,6 +10,19 @@ import {
 } from '../middleware/checkDocumentAuth';
 
 const router = Router();
+
+const mapDocType = (docType?: string): DocumentType => {
+  const typeMap: Record<string, DocumentType> = {
+    'note': DocumentType.NOTE,
+    'meeting': DocumentType.MEETING,
+    'decision': DocumentType.DECISION,
+    'retro': DocumentType.RETRO,
+    'spec': DocumentType.SPEC,
+    'research': DocumentType.RESEARCH,
+    'custom': DocumentType.CUSTOM,
+  };
+  return typeMap[docType?.toLowerCase() || 'note'] || DocumentType.NOTE;
+};
 
 const USER_PUBLIC_SELECT = {
   id: true,
@@ -126,7 +140,7 @@ router.post('/', auth, validateDocumentProject, async (req: AuthRequest, res: Re
         },
         tags: Array.isArray(req.body.tags) ? req.body.tags : [],
         isPublic: Boolean(req.body.isPublic),
-        docType: req.body.docType || 'note',
+        docType: mapDocType(req.body.docType),
         summary: req.body.summary ?? '',
       },
       include: DOCUMENT_INCLUDE,
@@ -149,7 +163,7 @@ router.patch('/:id', auth, canEditDocument, async (req: AuthRequest, res: Respon
     if (req.body.title !== undefined) data.title = req.body.title;
     if (req.body.content !== undefined) data.content = req.body.content;
     if (req.body.isPublic !== undefined) data.isPublic = Boolean(req.body.isPublic);
-    if (req.body.docType !== undefined) data.docType = req.body.docType;
+    if (req.body.docType !== undefined) data.docType = mapDocType(req.body.docType);
     if (req.body.summary !== undefined) data.summary = req.body.summary ?? '';
     if (req.body.tags !== undefined) {
       data.tags = Array.isArray(req.body.tags) ? req.body.tags : [];

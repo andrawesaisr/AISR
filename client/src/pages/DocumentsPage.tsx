@@ -324,14 +324,14 @@ const DocumentsPage: React.FC = () => {
           {filteredDocuments.map((doc) => {
             const linkedProject =
               typeof doc.project === 'string'
-                ? projects.find((project) => project._id === doc.project)
+                ? projects.find((project) => project.id === doc.project)
                 : doc.project;
             return (
               <div
-                key={doc._id}
+                key={doc.id}
                 className="group relative flex h-full flex-col justify-between rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-jira transition hover:-translate-y-1 hover:shadow-jira-hover"
               >
-                <Link to={`/documents/${doc._id}`} className="flex flex-1 flex-col">
+                <Link to={`/documents/${doc.id}`} className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-status-purple/10 text-status-purple">
@@ -371,7 +371,7 @@ const DocumentsPage: React.FC = () => {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      handleDeleteDocument(doc._id);
+                      handleDeleteDocument(doc.id);
                     }}
                     className="rounded-xl border border-red-200 px-3 py-1 text-12 font-semibold text-status-red opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
                   >

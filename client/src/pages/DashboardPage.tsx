@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { HeroIcon } from '../types/icons';
+import type { Project, Document, Task } from '../types/api';
 import {
   FolderIcon,
   DocumentTextIcon,
@@ -32,9 +33,9 @@ type QuickAction = {
 };
 
 const DashboardPage: React.FC = () => {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [recentTasks, setRecentTasks] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [taskStats, setTaskStats] = useState<TaskStats>({
     total: 0,
     todo: 0,
@@ -56,21 +57,27 @@ const DashboardPage: React.FC = () => {
         setDocuments(docsData);
 
         if (projectsData.length > 0) {
-          const projectSubset = projectsData.slice(0, 4);
+          const projectSubset = projectsData.slice(0, 5);
           const taskResponses = await Promise.all(
-            projectSubset.map((project) =>
-              getTasksForProject(project._id).catch((error) => {
-                console.error(`Failed to load tasks for project ${project._id}`, error);
+            projectSubset.map((project: Project) =>
+              getTasksForProject(project.id).catch((error) => {
+                console.error(`Failed to load tasks for project ${project.id}`, error);
                 return [];
               })
             )
           );
 
+          // Build task counts directly from responses
+          const counts: Record<string, number> = {};
+          projectSubset.forEach((project: Project, index: number) => {
+            counts[project.id] = taskResponses[index].length;
+          });
+
           const aggregatedTasks = taskResponses.flat();
 
           if (aggregatedTasks.length > 0) {
             const sortedTasks = [...aggregatedTasks].sort((a, b) => {
-              const getComparableTime = (task: any) => {
+              const getComparableTime = (task: Task) => {
                 const baseDate = task.updatedAt || task.dueDate || task.createdAt;
                 return baseDate ? new Date(baseDate).getTime() : 0;
               };
@@ -100,15 +107,6 @@ const DashboardPage: React.FC = () => {
                   }
                 }
 
-                const projectId =
-                  typeof task.project === 'string'
-                    ? task.project
-                    : task.project?._id || task.project?.id;
-
-                if (projectId) {
-                  acc.counts[projectId] = (acc.counts[projectId] || 0) + 1;
-                }
-
                 acc.total += 1;
                 return acc;
               },
@@ -118,7 +116,6 @@ const DashboardPage: React.FC = () => {
                 inProgress: 0,
                 done: 0,
                 dueSoon: 0,
-                counts: {} as Record<string, number>,
               }
             );
 
@@ -129,11 +126,11 @@ const DashboardPage: React.FC = () => {
               done: stats.done,
               dueSoon: stats.dueSoon,
             });
-            setProjectTaskCounts(stats.counts);
+            setProjectTaskCounts(counts);
           } else {
             setRecentTasks([]);
             setTaskStats({ total: 0, todo: 0, inProgress: 0, done: 0, dueSoon: 0 });
-            setProjectTaskCounts({});
+            setProjectTaskCounts(counts);
           }
         } else {
           setRecentTasks([]);
@@ -151,7 +148,7 @@ const DashboardPage: React.FC = () => {
     };
     fetchData();
   }, []);
-
+  
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'morning';
@@ -210,9 +207,9 @@ const DashboardPage: React.FC = () => {
   };
 
   const projectLookup = useMemo(() => {
-    const lookup: Record<string, any> = {};
+    const lookup: Record<string, Project> = {};
     projects.forEach((project) => {
-      lookup[project._id] = project;
+      lookup[project.id] = project;
     });
     return lookup;
   }, [projects]);
@@ -447,11 +444,11 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="space-y-3">
               {topProjects.map((project) => {
-                const taskCount = projectTaskCounts[project._id] ?? 0;
+                const taskCount = projectTaskCounts[project.id] || 0;
                 return (
                   <Link
-                    key={project._id}
-                    to={`/projects/${project._id}`}
+                    key={project.id}
+                    to={`/projects/${project.id}`}
                     className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors duration-150 hover:border-neutral-300 hover:bg-neutral-100"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-jira-50 text-jira-600">
@@ -502,8 +499,8 @@ const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               {recentDocuments.map((doc) => (
               <Link
-                key={doc._id}
-                to={`/documents/${doc._id}`}
+                key={doc.id || doc._id}
+                to={`/documents/${doc.id || doc._id}`}
                 className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors duration-150 hover:border-neutral-300 hover:bg-neutral-100"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-status-purple/10 text-status-purple">
@@ -557,7 +554,7 @@ const DashboardPage: React.FC = () => {
               const projectId =
                 typeof task.project === 'string'
                   ? task.project
-                  : task.project?._id || task.project?.id;
+                  : task.project?.id;
               const projectName =
                 typeof task.project === 'object' && task.project
                   ? task.project.name
@@ -568,7 +565,7 @@ const DashboardPage: React.FC = () => {
 
               return (
                 <Link
-                  key={task._id}
+                  key={task.id || task._id}
                   to={projectId ? `/projects/${projectId}` : '/projects'}
                   className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors duration-150 hover:border-neutral-300 hover:bg-neutral-100"
                 >

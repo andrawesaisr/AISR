@@ -77,7 +77,10 @@ const Sidebar: React.FC = () => {
 
       {/* Bottom Actions - Jira Style */}
       <div className="px-2 py-2 border-t border-neutral-300 space-y-0.5">
-        <Link to="/settings" className="sidebar-link">
+        <Link
+          to="/settings"
+          className={`sidebar-link ${isActive('/settings') ? 'sidebar-link-active' : ''}`}
+        >
           <Settings className="w-4 h-4" />
           <span className="text-14">Settings</span>
         </Link>

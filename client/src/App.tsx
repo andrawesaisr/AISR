@@ -18,6 +18,7 @@ import DocumentPage from './pages/DocumentPage';
 import DocumentsPage from './pages/DocumentsPage';
 import TeamPage from './pages/TeamPage';
 import InvitePage from './pages/InvitePage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="/documents/:id" element={<DocumentPage />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Layout>
         </OrganizationProvider>

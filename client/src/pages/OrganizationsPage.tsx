@@ -33,7 +33,7 @@ const OrganizationsPage: React.FC = () => {
       const newOrg = await createOrganization(formData);
       setShowCreateModal(false);
       setFormData({ name: '', description: '' });
-      navigate(`/organizations/${newOrg._id}`);
+      navigate(`/organizations/${newOrg.id}`);
     } catch (error) {
       console.error('Error creating organization:', error);
     }
@@ -110,8 +110,8 @@ const OrganizationsPage: React.FC = () => {
 
             return (
               <div
-                key={org._id}
-                onClick={() => navigate(`/organizations/${org._id}`)}
+                key={org.id}
+                onClick={() => navigate(`/organizations/${org.id}`)}
                 className="group flex h-full flex-col justify-between rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-jira transition hover:-translate-y-1 hover:shadow-jira-hover cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -130,7 +130,7 @@ const OrganizationsPage: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteOrganization(org._id, org.name);
+                        handleDeleteOrganization(org.id, org.name);
                       }}
                       className="rounded-xl border border-red-200 p-2 text-status-red opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
                     >

@@ -1,21 +1,26 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Squares2X2Icon as LayoutDashboard, 
-  FolderIcon as FolderKanban, 
+import {
+  Squares2X2Icon as LayoutDashboard,
+  FolderIcon as FolderKanban,
   DocumentTextIcon as FileText,
   UsersIcon as Users,
   BuildingOffice2Icon as Building2,
   Cog6ToothIcon as Settings,
   ArrowRightOnRectangleIcon as LogOut,
-  PlusIcon as Plus
+  PlusIcon as Plus,
+  SunIcon as Sun,
+  MoonIcon as Moon,
+  ComputerDesktopIcon as Monitor,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, isAuthenticated } = useAuth();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -25,17 +30,30 @@ const Sidebar: React.FC = () => {
     // { path: '/team', icon: Users, label: 'Team' },
   ];
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const ThemeGlyph = theme === 'system' ? Monitor : resolvedTheme === 'dark' ? Moon : Sun;
+  const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+  const themeLabel =
+    theme === 'system'
+      ? `System - ${resolvedTheme === 'dark' ? 'Dark' : 'Light'}`
+      : `${theme.charAt(0).toUpperCase()}${theme.slice(1)}`;
+  const quickToggleLabel =
+    nextTheme === 'dark' ? 'Switch to dark mode' : 'Switch to light mode';
 
   if (!isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="w-64 bg-white border-r border-neutral-300 h-screen fixed left-0 top-0 flex flex-col">
+    <div className="w-64 bg-white border-r border-neutral-300 h-screen fixed left-0 top-0 flex flex-col dark:bg-neutral-950 dark:border-neutral-800">
       {/* Logo - Jira Style */}
       <div className="px-4 py-3 border-b border-neutral-300">
-        <Link to="/dashboard" className="flex items-center gap-2 hover:bg-neutral-100 p-1 rounded-jira transition-colors">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-900 p-1 rounded-jira transition-colors"
+        >
           <div className="w-8 h-8 flex items-center justify-center">
             <img src="/imgages/aisr.png" alt="AISR Logo" className="w-8 h-8 object-contain" />
           </div>
@@ -48,8 +66,8 @@ const Sidebar: React.FC = () => {
 
       {/* Quick Actions - Jira Style */}
       <div className="px-3 py-2 border-b border-neutral-300">
-        <Link 
-          to="/new-project" 
+        <Link
+          to="/new-project"
           className="btn-primary w-full gap-1 text-12"
         >
           <Plus className="w-4 h-4" />
@@ -76,7 +94,19 @@ const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Actions - Jira Style */}
-      <div className="px-2 py-2 border-t border-neutral-300 space-y-0.5">
+      <div className="px-2 py-2 border-t border-neutral-300 space-y-0.5 dark:border-neutral-800">
+        <button
+          type="button"
+          className="sidebar-link w-full justify-between"
+          onClick={() => setTheme(nextTheme)}
+          title={quickToggleLabel}
+        >
+          <span className="flex items-center gap-2">
+            <ThemeGlyph className="w-4 h-4" />
+            <span className="text-14">Theme</span>
+          </span>
+          <span className="text-12 text-neutral-600 dark:text-neutral-300">{themeLabel}</span>
+        </button>
         <Link
           to="/settings"
           className={`sidebar-link ${isActive('/settings') ? 'sidebar-link-active' : ''}`}
@@ -89,7 +119,7 @@ const Sidebar: React.FC = () => {
             logout();
             navigate('/');
           }}
-          className="sidebar-link w-full text-left text-status-red hover:bg-red-50"
+          className="sidebar-link w-full text-left text-status-red hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950"
         >
           <LogOut className="w-4 h-4" />
           <span className="text-14">Sign out</span>

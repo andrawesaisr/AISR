@@ -14,9 +14,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-100">
+    <div className="min-h-screen bg-neutral-100 text-neutral-1000 transition-colors duration-150 dark:bg-neutral-1000 dark:text-neutral-0">
       <Sidebar />
-      <div className="ml-64">
+      <div className="ml-64 transition-colors duration-150">
         <main className="p-8">
           {children}
         </main>

@@ -35,9 +35,10 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-neutral-100 text-neutral-1000 lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-jira-600 via-jira-500 to-status-purple lg:flex">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.25),transparent_55%)]" />
+    <div className="grid min-h-screen grid-cols-1 bg-neutral-100 text-neutral-1000 transition-colors duration-200 dark:bg-neutral-1000 dark:text-neutral-0 lg:grid-cols-2">
+      <div className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_top_left,#3b82f6_0%,transparent_55%)] lg:flex">
+        <div className="absolute inset-0 bg-gradient-to-br from-jira-600 via-jira-500 to-status-purple opacity-95 dark:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.25),transparent_55%)] dark:bg-[radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.35),transparent_60%)]" />
         <div className="relative flex w-full flex-col justify-between px-16 py-14 text-white">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-14 font-semibold text-white/80 hover:text-white">
@@ -74,19 +75,19 @@ const LoginPage: React.FC = () => {
       <div className="flex items-center justify-center px-6 py-10 sm:px-10">
         <div className="w-full max-w-md space-y-10">
           <div className="space-y-2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-neutral-200 px-3 py-1 text-11 font-semibold uppercase tracking-wide text-neutral-700">
+            <div className="inline-flex items-center gap-2 rounded-full bg-neutral-200 px-3 py-1 text-11 font-semibold uppercase tracking-wide text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
               Workspace access
             </div>
-            <h2 className="text-29 font-semibold text-neutral-1000">Sign in to AISR</h2>
-            <p className="text-14 text-neutral-700">
+            <h2 className="text-29 font-semibold text-neutral-1000 dark:text-neutral-0">Sign in to AISR</h2>
+            <p className="text-14 text-neutral-700 dark:text-neutral-300">
               Enter your credentials to sync up with your teams and projects.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-300 bg-white p-8 shadow-soft">
+          <div className="rounded-2xl border border-neutral-300 bg-white p-8 shadow-soft dark:border-neutral-800 dark:bg-neutral-950">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                <label htmlFor="email" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
                   Email
                 </label>
                 <input
@@ -101,7 +102,7 @@ const LoginPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                <label htmlFor="password" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
                   Password
                 </label>
                 <input
@@ -125,14 +126,14 @@ const LoginPage: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-6 space-y-3 text-center text-14 text-neutral-700">
+            <div className="mt-6 space-y-3 text-center text-14 text-neutral-700 dark:text-neutral-300">
               <p>
                 Need an account?{' '}
                 <Link to="/register" className="font-semibold text-jira-600 hover:text-jira-500">
                   Create one now
                 </Link>
               </p>
-              <Link to="/" className="inline-flex items-center justify-center gap-2 text-12 text-neutral-600 hover:text-neutral-900">
+              <Link to="/" className="inline-flex items-center justify-center gap-2 text-12 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200">
                 <ArrowLeft className="w-[14px] h-[14px]" />
                 Back to marketing site
               </Link>

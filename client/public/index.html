@@ -7,6 +7,21 @@
     <link rel="icon" type="image/png" href="/imgages/aisr.png">
     <link rel="apple-touch-icon" href="/imgages/aisr.png">
     <title>AISR - All-in-One Workspace</title>
+    <script>
+      (function() {
+        var storageKey = 'aisr:settings:theme';
+        try {
+          var stored = localStorage.getItem(storageKey);
+          var preference = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (preference === 'dark' || (preference === 'system' && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (err) {
+          console.warn('Unable to apply stored theme preference.', err);
+        }
+      })();
+    </script>
 </head>
 <body>
     <div id="root"></div>

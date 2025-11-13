@@ -79,9 +79,10 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-neutral-100 text-neutral-1000 lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-jira-600 via-jira-500 to-status-purple lg:flex">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.25),transparent_55%)]" />
+    <div className="grid min-h-screen grid-cols-1 bg-neutral-100 text-neutral-1000 transition-colors duration-200 dark:bg-neutral-1000 dark:text-neutral-0 lg:grid-cols-2">
+      <div className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_top_left,#3b82f6_0%,transparent_55%)] lg:flex">
+        <div className="absolute inset-0 bg-gradient-to-br from-jira-600 via-jira-500 to-status-purple opacity-95 dark:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.25),transparent_55%)] dark:bg-[radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.35),transparent_60%)]" />
         <div className="relative flex w-full flex-col justify-between px-16 py-14 text-white">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-14 font-semibold text-white/80 hover:text-white">
@@ -120,11 +121,11 @@ const RegisterPage: React.FC = () => {
       <div className="flex items-center justify-center px-6 py-10 sm:px-10">
         <div className="w-full max-w-md space-y-10">
           <div className="space-y-2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-neutral-200 px-3 py-1 text-11 font-semibold uppercase tracking-wide text-neutral-700">
+            <div className="inline-flex items-center gap-2 rounded-full bg-neutral-200 px-3 py-1 text-11 font-semibold uppercase tracking-wide text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
               Create account
             </div>
-            <h2 className="text-29 font-semibold text-neutral-1000">Join AISR</h2>
-            <p className="text-14 text-neutral-700">
+            <h2 className="text-29 font-semibold text-neutral-1000 dark:text-neutral-0">Join AISR</h2>
+            <p className="text-14 text-neutral-700 dark:text-neutral-300">
               Set up your workspace credentials and start building momentum with your team.
             </p>
           </div>
@@ -132,19 +133,19 @@ const RegisterPage: React.FC = () => {
           {inviteEmail && (
             <div className="flex items-start gap-3 rounded-2xl border border-jira-200 bg-jira-50/60 p-4">
               <Mail className="w-[18px] h-[18px] mt-0.5 text-jira-600" />
-              <div className="text-left text-sm text-neutral-700">
-                <p className="font-semibold text-jira-700">Invitation detected</p>
-                <p className="text-xs text-neutral-600">
+              <div className="text-left text-sm text-neutral-700 dark:text-neutral-300">
+                <p className="font-semibold text-jira-700 dark:text-jira-200">Invitation detected</p>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400">
                   Continue with <strong>{inviteEmail}</strong> to accept your invite.
                 </p>
               </div>
             </div>
           )}
 
-          <div className="rounded-2xl border border-neutral-300 bg-white p-8 shadow-soft">
+          <div className="rounded-2xl border border-neutral-300 bg-white p-8 shadow-soft dark:border-neutral-800 dark:bg-neutral-950">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="username" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                <label htmlFor="username" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
                   Username
                 </label>
                 <input
@@ -160,7 +161,7 @@ const RegisterPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                <label htmlFor="email" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
                   Email
                 </label>
                 <input
@@ -174,11 +175,11 @@ const RegisterPage: React.FC = () => {
                   readOnly={!!inviteEmail}
                   disabled={!!inviteEmail}
                 />
-                {inviteEmail && <p className="mt-1 text-11 font-semibold text-jira-600">Email is locked from invitation</p>}
+                {inviteEmail && <p className="mt-1 text-11 font-semibold text-jira-600 dark:text-jira-300">Email is locked from invitation</p>}
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                <label htmlFor="password" className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
                   Password
                 </label>
                 <input
@@ -191,26 +192,26 @@ const RegisterPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <p className="mt-1 text-11 text-neutral-600">Must include at least 6 characters.</p>
+                <p className="mt-1 text-11 text-neutral-600 dark:text-neutral-400">Must include at least 6 characters.</p>
               </div>
 
               {!isInvited && (
-                <div className="rounded-xl border border-neutral-200 bg-neutral-100/60 p-4">
+                <div className="rounded-xl border border-neutral-200 bg-neutral-100/60 p-4 dark:border-neutral-700 dark:bg-neutral-900/60">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-12 font-semibold uppercase tracking-wide text-neutral-700">
+                      <p className="text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-200">
                         Workspace setup
                       </p>
-                      <p className="text-12 text-neutral-600">
+                      <p className="text-12 text-neutral-600 dark:text-neutral-400">
                         Spin up an organization so you can invite teammates and manage projects.
                       </p>
                     </div>
-                    <label className="flex items-center gap-2 text-12 text-neutral-700">
+                    <label className="flex items-center gap-2 text-12 text-neutral-700 dark:text-neutral-200">
                       <input
                         type="checkbox"
                         checked={createWorkspace}
                         onChange={(e) => setCreateWorkspace(e.target.checked)}
-                        className="h-4 w-4 rounded border-neutral-400 text-jira-500 focus:ring-jira-500"
+                        className="h-4 w-4 rounded border-neutral-400 text-jira-500 focus:ring-jira-500 dark:border-neutral-600"
                       />
                       Create workspace
                     </label>
@@ -220,7 +221,7 @@ const RegisterPage: React.FC = () => {
                       <div>
                         <label
                           htmlFor="workspace-name"
-                          className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                          className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-200"
                         >
                           Workspace name
                         </label>
@@ -236,7 +237,7 @@ const RegisterPage: React.FC = () => {
                       <div>
                         <label
                           htmlFor="workspace-description"
-                          className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                          className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-200"
                         >
                           Description (optional)
                         </label>
@@ -263,14 +264,14 @@ const RegisterPage: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-6 space-y-3 text-center text-14 text-neutral-700">
+            <div className="mt-6 space-y-3 text-center text-14 text-neutral-700 dark:text-neutral-300">
               <p>
                 Already have an account?{' '}
                 <Link to="/login" className="font-semibold text-jira-600 hover:text-jira-500">
                   Sign in
                 </Link>
               </p>
-              <Link to="/" className="inline-flex items-center justify-center gap-2 text-12 text-neutral-600 hover:text-neutral-900">
+              <Link to="/" className="inline-flex items-center justify-center gap-2 text-12 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200">
                 <ArrowLeft className="w-[14px] h-[14px]" />
                 Back to marketing site
               </Link>

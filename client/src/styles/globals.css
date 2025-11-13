@@ -6,15 +6,15 @@
 
 @layer base {
   * {
-    @apply border-neutral-300;
+    @apply border-neutral-300 dark:border-neutral-700;
   }
   body {
-    @apply bg-neutral-100 text-neutral-1000 font-sans;
+    @apply bg-neutral-100 text-neutral-1000 font-sans dark:bg-neutral-1000 dark:text-neutral-0;
     font-size: 14px;
     line-height: 1.42857;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply text-neutral-1000 font-semibold;
+    @apply text-neutral-1000 dark:text-neutral-0 font-semibold;
     line-height: 1.2;
   }
 }
@@ -22,7 +22,7 @@
 @layer components {
   /* Jira Primary Button */
   .btn-primary {
-    @apply bg-jira-500 hover:bg-jira-600 text-white font-medium px-3 py-1.5 rounded-jira transition-colors duration-100 text-14;
+    @apply bg-jira-500 hover:bg-jira-600 text-white font-medium px-3 py-1.5 rounded-jira transition-colors duration-100 text-14 dark:bg-jira-600 dark:hover:bg-jira-500;
     box-shadow: none;
     border: none;
     height: 32px;
@@ -33,7 +33,7 @@
   
   /* Jira Secondary Button */
   .btn-secondary {
-    @apply bg-neutral-200 hover:bg-neutral-300 text-neutral-1000 font-medium px-3 py-1.5 rounded-jira transition-colors duration-100 text-14;
+    @apply bg-neutral-200 hover:bg-neutral-300 text-neutral-1000 font-medium px-3 py-1.5 rounded-jira transition-colors duration-100 text-14 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-0;
     box-shadow: none;
     border: none;
     height: 32px;
@@ -44,31 +44,35 @@
   
   /* Jira Ghost Button */
   .btn-ghost {
-    @apply hover:bg-neutral-200 text-neutral-800 font-normal px-2 py-1 rounded-jira transition-colors duration-100 text-14;
+    @apply hover:bg-neutral-200 text-neutral-800 font-normal px-2 py-1 rounded-jira transition-colors duration-100 text-14 dark:hover:bg-neutral-800 dark:text-neutral-200;
     background: transparent;
     border: none;
   }
   
   /* Jira Card */
   .card {
-    @apply bg-white rounded-jira shadow-jira p-4 hover:shadow-jira-hover transition-shadow duration-100;
+    @apply bg-white rounded-jira shadow-jira p-4 hover:shadow-jira-hover transition-shadow duration-100 dark:bg-neutral-950 dark:border-neutral-800 dark:hover:shadow-none;
     border: 1px solid #dfe1e6;
   }
 
   .card-muted {
-    @apply bg-white rounded-2xl border border-neutral-300 shadow-jira p-6;
+    @apply bg-white rounded-2xl border border-neutral-300 shadow-jira p-6 dark:bg-neutral-950 dark:border-neutral-800;
   }
 
   .shadow-soft {
     box-shadow: 0 18px 45px -15px rgba(9, 30, 66, 0.28);
   }
 
+  .dark .shadow-soft {
+    box-shadow: 0 20px 55px -20px rgba(15, 23, 42, 0.6);
+  }
+
   .section-title {
-    @apply text-20 font-semibold text-neutral-1000;
+    @apply text-20 font-semibold text-neutral-1000 dark:text-neutral-0;
   }
 
   .section-subtitle {
-    @apply text-12 text-neutral-700;
+    @apply text-12 text-neutral-700 dark:text-neutral-300;
   }
 
   .page-header {
@@ -76,15 +80,15 @@
   }
 
   .page-header-title {
-    @apply text-29 font-semibold text-neutral-1000;
+    @apply text-29 font-semibold text-neutral-1000 dark:text-neutral-0;
   }
 
   .page-header-subtitle {
-    @apply text-14 text-neutral-700;
+    @apply text-14 text-neutral-700 dark:text-neutral-400;
   }
 
   .loading-state {
-    @apply flex flex-col items-center justify-center gap-3 text-neutral-700;
+    @apply flex flex-col items-center justify-center gap-3 text-neutral-700 dark:text-neutral-300;
   }
 
   .empty-state {
@@ -96,7 +100,7 @@
   }
 
   .empty-state-description {
-    @apply text-14 text-neutral-700 max-w-md mx-auto;
+    @apply text-14 text-neutral-700 max-w-md mx-auto dark:text-neutral-300;
   }
 
   .pill {
@@ -105,16 +109,20 @@
   
   /* Jira Input Field */
   .input-field {
-    @apply w-full px-2 py-1.5 border-2 border-neutral-300 rounded-jira focus:border-jira-500 outline-none transition-all duration-100 text-14;
+    @apply w-full px-2 py-1.5 border-2 border-neutral-300 rounded-jira focus:border-jira-500 outline-none transition-all duration-100 text-14 dark:border-neutral-700 dark:focus:border-jira-400 dark:text-neutral-0;
     background-color: #FAFBFC;
   }
   
   .input-field:hover {
-    @apply bg-neutral-100;
+    @apply bg-neutral-100 dark:bg-neutral-900;
   }
   
   .input-field:focus {
-    @apply bg-white;
+    @apply bg-white dark:bg-neutral-900;
+  }
+
+  .dark .input-field {
+    background-color: #0f172a;
   }
 
   textarea.input-field {
@@ -125,17 +133,17 @@
   
   /* Jira Sidebar Link */
   .sidebar-link {
-    @apply flex items-center gap-2 px-2 py-1.5 rounded-jira text-neutral-800 hover:bg-neutral-200 transition-colors duration-100 cursor-pointer text-14;
+    @apply flex items-center gap-2 px-2 py-1.5 rounded-jira text-neutral-800 hover:bg-neutral-200 transition-colors duration-100 cursor-pointer text-14 dark:text-neutral-200 dark:hover:bg-neutral-800;
     font-weight: 500;
   }
   
   .sidebar-link-active {
-    @apply bg-jira-50 text-jira-500 font-semibold;
+    @apply bg-jira-50 text-jira-500 font-semibold dark:bg-neutral-800 dark:text-jira-200;
   }
   
   /* Jira Task Card */
   .task-card {
-    @apply bg-white p-2 rounded-jira shadow-jira-card border border-neutral-300 hover:bg-neutral-100 transition-all duration-100 cursor-pointer;
+    @apply bg-white p-2 rounded-jira shadow-jira-card border border-neutral-300 hover:bg-neutral-100 transition-all duration-100 cursor-pointer dark:bg-neutral-950 dark:border-neutral-800 dark:hover:bg-neutral-900;
     min-height: 80px;
   }
   
@@ -156,6 +164,10 @@
   .badge-done {
     @apply bg-green-50 text-status-green;
   }
+
+  .dark .badge-done {
+    @apply bg-green-900 text-green-200;
+  }
   
   /* Jira Modal */
   .modal-overlay {
@@ -163,12 +175,116 @@
   }
   
   .modal-content {
-    @apply bg-white rounded-jira shadow-jira max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto;
+    @apply bg-white rounded-jira shadow-jira max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-neutral-950 dark:border dark:border-neutral-800;
   }
   
   /* Jira Priority Badge */
   .priority-badge {
     @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded-jira text-11 font-semibold;
+  }
+}
+
+@layer utilities {
+  .dark .bg-white {
+    @apply bg-neutral-900;
+  }
+
+  .dark .bg-neutral-0 {
+    @apply bg-neutral-900;
+  }
+
+  .dark .bg-neutral-100 {
+    @apply bg-neutral-900;
+  }
+
+  .dark .bg-neutral-200 {
+    @apply bg-neutral-800;
+  }
+
+  .dark .text-neutral-700 {
+    @apply text-neutral-300;
+  }
+
+  .dark .text-neutral-600 {
+    @apply text-neutral-300;
+  }
+
+  .dark .text-neutral-800 {
+    @apply text-neutral-200;
+  }
+
+  .dark .text-neutral-900 {
+    @apply text-neutral-100;
+  }
+
+  .dark .text-neutral-1000 {
+    @apply text-neutral-0;
+  }
+  
+  .dark .border-neutral-100,
+  .dark .border-neutral-200,
+  .dark .border-neutral-300 {
+    @apply border-neutral-700;
+  }
+
+  .dark .bg-white\/90 {
+    background-color: rgba(15, 23, 42, 0.92);
+  }
+
+  .dark .bg-white\/80 {
+    background-color: rgba(15, 23, 42, 0.82);
+  }
+
+  .dark .bg-white\/10 {
+    background-color: rgba(59, 130, 246, 0.12);
+  }
+
+  .dark .border-white\/20 {
+    border-color: rgba(59, 130, 246, 0.24);
+  }
+
+  .dark .border-white\/40 {
+    border-color: rgba(59, 130, 246, 0.36);
+  }
+
+  .dark .border-white\/50 {
+    border-color: rgba(59, 130, 246, 0.42);
+  }
+
+  .dark .border-white\/60 {
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .dark .text-white\/70 {
+    color: rgba(191, 219, 254, 0.85);
+  }
+
+  .dark .bg-neutral-100\/80 {
+    background-color: rgba(30, 41, 59, 0.78);
+  }
+
+  .dark .bg-neutral-100\/70 {
+    background-color: rgba(30, 41, 59, 0.68);
+  }
+
+  .dark .bg-neutral-100\/60 {
+    background-color: rgba(30, 41, 59, 0.58);
+  }
+
+  .dark .bg-neutral-100\/40 {
+    background-color: rgba(30, 41, 59, 0.4);
+  }
+
+  .dark .bg-neutral-100\/10 {
+    background-color: rgba(30, 41, 59, 0.12);
+  }
+
+  .dark .hover\:bg-neutral-100\/70:hover {
+    background-color: rgba(30, 41, 59, 0.68);
+  }
+
+  .dark .hover\:bg-neutral-100\/60:hover {
+    background-color: rgba(30, 41, 59, 0.58);
   }
 }
 

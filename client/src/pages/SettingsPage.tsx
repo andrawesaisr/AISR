@@ -12,6 +12,7 @@ import LoadingState from '../components/LoadingState';
 import { getCurrentUser, updateUserProfile } from '../services/api';
 import type { User } from '../types/api';
 import { getErrorMessage } from '../utils/errors';
+import { useTheme } from '../context/ThemeContext';
 
 type Preferences = {
   emailUpdates: boolean;
@@ -117,6 +118,7 @@ const PreferenceToggle: React.FC<PreferenceToggleProps> = ({ enabled, onChange, 
 );
 
 const SettingsPage: React.FC = () => {
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [profileForm, setProfileForm] = useState({
     username: '',
@@ -127,7 +129,10 @@ const SettingsPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [preferences, setPreferences] = useState<Preferences>(loadPreferences);
+  const [preferences, setPreferences] = useState<Preferences>(() => {
+    const stored = loadPreferences();
+    return { ...stored, theme };
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -164,6 +169,13 @@ const SettingsPage: React.FC = () => {
     }
   }, [preferences]);
 
+  useEffect(() => {
+    setPreferences((prev) => ({
+      ...prev,
+      theme,
+    }));
+  }, [theme]);
+
   const initials = useMemo(() => {
     if (!profileForm.username) {
       return 'AA';
@@ -192,6 +204,14 @@ const SettingsPage: React.FC = () => {
       return '—';
     }
   }, [user?.createdAt]);
+
+  const themeDescription = useMemo(() => {
+    if (theme === 'system') {
+      const resolvedLabel = resolvedTheme === 'dark' ? 'Dark' : 'Light';
+      return `System default - ${resolvedLabel}`;
+    }
+    return `${theme === 'dark' ? 'Dark' : 'Light'} mode`;
+  }, [theme, resolvedTheme]);
 
   const handleProfileChange = (key: keyof typeof profileForm) => (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -249,13 +269,15 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleThemeChange = (value: Preferences['theme']) => {
-    setPreferences((prev) => {
-      if (prev.theme === value) {
-        return prev;
-      }
-      toast.success(`Theme preference set to ${value}.`);
-      return { ...prev, theme: value };
-    });
+    if (preferences.theme === value) {
+      return;
+    }
+    setTheme(value);
+    setPreferences((prev) => ({
+      ...prev,
+      theme: value,
+    }));
+    toast.success(`Theme preference set to ${value}.`);
   };
 
   if (loading) {
@@ -468,8 +490,12 @@ const SettingsPage: React.FC = () => {
                   <option value="light">Always light</option>
                   <option value="dark">Lights out</option>
                 </select>
-                <p className="text-12 text-neutral-600">
-                  We&apos;ll remember your choice on this device.
+                <p className="text-12 text-neutral-600 dark:text-neutral-400">
+                  We&apos;ll remember your choice on this device. Currently using{' '}
+                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                    {themeDescription}
+                  </span>
+                  .
                 </p>
               </label>
               <div className="flex flex-col justify-between gap-3 rounded-xl border border-dashed border-neutral-300 bg-neutral-100/60 p-4">

@@ -42,6 +42,9 @@ const mapTaskStatus = (status: string): any => {
     'To Do': 'TO_DO',
     'In Progress': 'IN_PROGRESS',
     'Done': 'DONE',
+    'TO_DO': 'TO_DO',
+    'IN_PROGRESS': 'IN_PROGRESS',
+    'DONE': 'DONE',
   };
   return statusMap[status] || 'TO_DO';
 };
@@ -52,6 +55,11 @@ const mapTaskPriority = (priority: string): any => {
     'Medium': 'MEDIUM',
     'High': 'HIGH',
     'Urgent': 'URGENT',
+    // Also accept enum values directly
+    'LOW': 'LOW',
+    'MEDIUM': 'MEDIUM',
+    'HIGH': 'HIGH',
+    'URGENT': 'URGENT',
   };
   return priorityMap[priority] || 'MEDIUM';
 };

@@ -173,6 +173,10 @@ const ProjectPage: React.FC = () => {
       console.log('Updating task with:', updates);
       const result = await updateTask(taskId, updates);
       console.log('Update result:', result);
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask({ ...selectedTask, ...updates });
+      }
+      
       await fetchTasks();
       toast.success('Task updated!');
     } catch (err) {
@@ -309,6 +313,15 @@ const ProjectPage: React.FC = () => {
     return statusMap[status] || status;
   };
 
+  const getStatusEnum = (displayValue: string) => {
+    const reverseMap: Record<string, string> = {
+      'To Do': 'TO_DO',
+      'In Progress': 'IN_PROGRESS',
+      'Done': 'DONE',
+    };
+    return reverseMap[displayValue] || displayValue;
+  };
+
   const getStatusClass = (status: string) => {
     const normalizedStatus = getStatusDisplay(status);
     if (normalizedStatus === 'Done') return 'badge-done';
@@ -324,6 +337,16 @@ const ProjectPage: React.FC = () => {
       'URGENT': 'Urgent',
     };
     return priorityMap[priority] || priority;
+  };
+
+  const getPriorityEnum = (displayValue: string) => {
+    const reverseMap: Record<string, string> = {
+      'Low': 'LOW',
+      'Medium': 'MEDIUM',
+      'High': 'HIGH',
+      'Urgent': 'URGENT',
+    };
+    return reverseMap[displayValue] || displayValue;
   };
 
   return (
@@ -631,8 +654,8 @@ const ProjectPage: React.FC = () => {
                 <h2 className="text-24 font-semibold text-neutral-1000">{selectedTask.title}</h2>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
-                    value={selectedTask.status === 'TO_DO' ? 'To Do' : selectedTask.status === 'IN_PROGRESS' ? 'In Progress' : selectedTask.status === 'DONE' ? 'Done' : selectedTask.status}
-                    onChange={(e) => handleUpdateTask(selectedTask.id, { status: e.target.value })}
+                    value={getStatusDisplay(selectedTask.status)}
+                    onChange={(e) => handleUpdateTask(selectedTask.id, { status: getStatusEnum(e.target.value) })}
                     className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                   >
                     <option>To Do</option>
@@ -640,8 +663,8 @@ const ProjectPage: React.FC = () => {
                     <option>Done</option>
                   </select>
                   <select
-                    value={getPriorityDisplay(selectedTask.priority || 'Medium')}
-                    onChange={(e) => handleUpdateTask(selectedTask.id, { priority: e.target.value })}
+                    value={getPriorityDisplay(selectedTask.priority)}
+                    onChange={(e) => handleUpdateTask(selectedTask.id, { priority: getPriorityEnum(e.target.value) })}
                     className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
                   >
                     <option>Low</option>

@@ -47,7 +47,7 @@ export const canViewDocument = async (req: AuthRequest, res: Response, next: Nex
   }
 
   try {
-    if (req.user?.role === 'admin') {
+    if (req.user?.role === 'ADMIN') {
       return next();
     }
 
@@ -171,7 +171,8 @@ export const validateDocumentProject = async (
 
   try {
     if (!projectId) {
-      if (req.user?.role === 'owner' || req.user?.role === 'admin') {
+      console.log("req.user: ", req.user)
+      if (req.user?.role === 'OWNER' || req.user?.role === 'ADMIN') {
         return next();
       }
       return res.status(403).json({ message: 'Only owners or admins can create documents' });

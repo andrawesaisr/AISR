@@ -96,7 +96,7 @@ export const canEditTask = async (req: AuthRequest, res: Response, next: NextFun
       return next();
     }
 
-    if (isOrganizationOwner(project.organization, userId)) {
+    if (isOrganizationOwnerOrAdmin(project.organization, userId)) {
       return next();
     }
 

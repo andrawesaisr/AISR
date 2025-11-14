@@ -1,5 +1,19 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const dotenv = require('dotenv');
+
+const env = dotenv.config().parsed || {};
+const sentryEnv = {
+  'process.env.SENTRY_DSN': JSON.stringify(env.SENTRY_DSN || process.env.SENTRY_DSN || ''),
+  'process.env.SENTRY_ENVIRONMENT': JSON.stringify(env.SENTRY_ENVIRONMENT || process.env.SENTRY_ENVIRONMENT || ''),
+  'process.env.SENTRY_TRACES_SAMPLE_RATE': JSON.stringify(
+    env.SENTRY_TRACES_SAMPLE_RATE || process.env.SENTRY_TRACES_SAMPLE_RATE || ''
+  ),
+  'process.env.SENTRY_PROFILES_SAMPLE_RATE': JSON.stringify(
+    env.SENTRY_PROFILES_SAMPLE_RATE || process.env.SENTRY_PROFILES_SAMPLE_RATE || ''
+  ),
+};
 
 module.exports = {
   entry: './src/index.tsx',
@@ -28,6 +42,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
     }),
+    new webpack.DefinePlugin(sentryEnv),
   ],
   devServer: {
     static: {

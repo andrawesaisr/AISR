@@ -37,7 +37,7 @@ const OrganizationPage: React.FC = () => {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member');
+  const [inviteRole, setInviteRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -80,7 +80,7 @@ const OrganizationPage: React.FC = () => {
         alert('Invitation sent successfully!');
         setShowInviteModal(false);
         setInviteEmail('');
-        setInviteRole('member');
+        setInviteRole('MEMBER');
       }
     } catch (error: any) {
       alert(error.response?.data?.message || 'Failed to send invitation');
@@ -157,10 +157,11 @@ const OrganizationPage: React.FC = () => {
     );
   }
 
-  const userMember = currentOrganization.members.find(m => m.user._id);
-  const canInvite = userMember?.role === 'owner' || userMember?.role === 'admin' || 
-                    (userMember?.role === 'member' && currentOrganization.settings?.allowMemberInvite);
-  const canManageMembers = userMember?.role === 'owner' || userMember?.role === 'admin';
+  const userMember = currentOrganization.members.find(m => m.user.id);
+  console.log("userMember : ", userMember)
+  const canInvite = userMember?.role === 'OWNER' || userMember?.role === 'ADMIN' || 
+                    (userMember?.role === 'MEMBER' && currentOrganization.settings?.allowMemberInvite);
+  const canManageMembers = userMember?.role === 'OWNER' || userMember?.role === 'ADMIN';
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
@@ -325,7 +326,7 @@ const OrganizationPage: React.FC = () => {
           onClick={() => {
             setShowInviteModal(false);
             setInviteEmail('');
-            setInviteRole('member');
+            setInviteRole('MEMBER');
             setInviteLink(null);
             setCopied(false);
           }}
@@ -355,7 +356,7 @@ const OrganizationPage: React.FC = () => {
                     onClick={() => {
                       setShowInviteModal(false);
                       setInviteEmail('');
-                      setInviteRole('member');
+                      setInviteRole('MEMBER');
                       setInviteLink(null);
                       setCopied(false);
                     }}
@@ -386,14 +387,14 @@ const OrganizationPage: React.FC = () => {
                   </label>
                   <select
                     value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member')}
+                    onChange={(e) => setInviteRole(e.target.value as 'ADMIN' | 'MEMBER')}
                     className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
                   >
-                    <option value="member">Member</option>
-                    <option value="admin">Admin</option>
+                    <option value="MEMBER">Member</option>
+                    <option value="ADMIN">Admin</option>
                   </select>
                   <p className="mt-1 text-11 text-neutral-600">
-                    {inviteRole === 'admin'
+                    {inviteRole === 'ADMIN'
                       ? 'Admins can invite new members and manage roles.'
                       : 'Members can collaborate on projects and documents.'}
                   </p>
@@ -404,7 +405,7 @@ const OrganizationPage: React.FC = () => {
                     onClick={() => {
                       setShowInviteModal(false);
                       setInviteEmail('');
-                      setInviteRole('member');
+                      setInviteRole('MEMBER');
                     }}
                     className="btn-secondary"
                   >

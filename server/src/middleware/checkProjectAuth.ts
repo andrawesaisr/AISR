@@ -47,6 +47,17 @@ export const isOrganizationOwner = (
       )
   );
 
+  export const isOrganizationOwnerOrAdmin = (
+  organization: { members: OrganizationMember[] } | null,
+  userId?: string
+) =>
+  Boolean(
+    userId &&
+      organization?.members.some(
+        (member: OrganizationMember) =>
+          member.userId === userId && (member.role === 'OWNER' || member.role === 'ADMIN')
+      )
+  );
 export const checkProjectAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const { projectId } = req.params;
   const userId = req.userId;

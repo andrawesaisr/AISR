@@ -3,6 +3,7 @@ import prisma from '../prismaClient';
 import { AuthRequest } from '../middleware/auth';
 import {
   isOrganizationOwner,
+  isOrganizationOwnerOrAdmin,
   isUserInOrganization,
   projectAccessSelection,
 } from './checkProjectAuth';
@@ -128,11 +129,11 @@ export const canCreateTask = async (req: AuthRequest, res: Response, next: NextF
       return next();
     }
 
-    if (isOrganizationOwner(project.organization, userId)) {
+    if (isOrganizationOwnerOrAdmin(project.organization, userId)) {
       return next();
     }
 
-    return res.status(403).json({ message: 'Only owners can create tasks' });
+    return res.status(403).json({ message: 'Only owners or admins can create tasks' });
   } catch (err: any) {
     res.status(500).json({ message: err.message || 'Unable to authorize task creation' });
   }

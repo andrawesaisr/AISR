@@ -12,7 +12,7 @@ interface OrganizationMember {
     avatar?: string;
     jobTitle?: string;
   };
-  role: 'owner' | 'admin' | 'member';
+  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'owner' | 'admin' | 'member';
   joinedAt: string;
 }
 
@@ -55,7 +55,7 @@ interface OrganizationContextType {
   createOrganization: (data: { name: string; description?: string }) => Promise<Organization>;
   updateOrganization: (id: string, data: Partial<Organization>) => Promise<Organization>;
   deleteOrganization: (id: string) => Promise<void>;
-  inviteMember: (organizationId: string, email: string, role: 'admin' | 'member') => Promise<{ message: string; inviteLink?: string }>;
+  inviteMember: (organizationId: string, email: string, role: 'ADMIN' | 'MEMBER') => Promise<{ message: string; inviteLink?: string }>;
   removeMember: (organizationId: string, userId: string) => Promise<void>;
   updateMemberRole: (organizationId: string, userId: string, role: 'admin' | 'member') => Promise<void>;
   cancelInvitation: (organizationId: string, invitationId: string) => Promise<void>;
@@ -139,7 +139,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const inviteMember = async (organizationId: string, email: string, role: 'admin' | 'member') => {
+  const inviteMember = async (organizationId: string, email: string, role: 'ADMIN' | 'MEMBER') => {
     const response = await axios.post(
       `${API_URL}/organizations/${organizationId}/invite`,
       { email, role },

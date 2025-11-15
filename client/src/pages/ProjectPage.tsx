@@ -69,7 +69,7 @@ const ProjectPage: React.FC = () => {
     const fetchProject = async () => {
       try {
         if (id) {
-          const res = await getProject(id);
+          const res = await getProject(id);          
           const projectData = res?.project ?? res;
           setProject(projectData);
         }
@@ -283,7 +283,7 @@ const ProjectPage: React.FC = () => {
       <EmptyState
         icon={FolderIcon}
         title="Project not found"
-        description="This project may have been removed or you no longer have access."
+        description="This project may have been removed or expired."
         action={
           <button onClick={() => navigate('/projects')} className="btn-primary flex items-center gap-2">
             <ArrowLeftIcon className="h-4 w-4" />

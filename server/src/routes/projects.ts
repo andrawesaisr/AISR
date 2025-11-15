@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import prisma, { Prisma } from '../prismaClient';
 import { auth, AuthRequest } from '../middleware/auth';
 import { isProjectMember, isProjectOwner, validateProjectOrganization } from '../middleware/checkProjectAuth';
+import { calculateAutoDeleteAt } from '../jobs/projectCleanup';
 
 const router = Router();
 
@@ -34,27 +35,34 @@ const PROJECT_INCLUDE = {
 // Get all projects
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
+    const baseVisibilityFilter = { deletedAt: null };
+
     const where =
       req.user?.role === 'admin'
-        ? undefined
+        ? baseVisibilityFilter
         : {
-            OR: [
-              { ownerId: req.userId },
+            AND: [
+              baseVisibilityFilter,
               {
-                members: {
-                  some: {
-                    id: req.userId,
-                  },
-                },
-              },
-              {
-                organization: {
-                  members: {
-                    some: {
-                      userId: req.userId,
+                OR: [
+                  { ownerId: req.userId },
+                  {
+                    members: {
+                      some: {
+                        id: req.userId,
+                      },
                     },
                   },
-                },
+                  {
+                    organization: {
+                      members: {
+                        some: {
+                          userId: req.userId,
+                        },
+                      },
+                    },
+                  },
+                ],
               },
             ],
           };
@@ -79,7 +87,7 @@ router.get('/:id', auth, isProjectMember, async (req: AuthRequest, res: Response
       include: PROJECT_INCLUDE,
     });
 
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Cannot find project' });
     }
 
@@ -108,6 +116,7 @@ router.post('/', auth, validateProjectOrganization, async (req: AuthRequest, res
         description: req.body.description,
         ownerId: req.userId,
         organizationId: req.body.organization ?? null,
+        autoDeleteAt: calculateAutoDeleteAt(),
         members: {
           connect: uniqueMemberIds.map((id) => ({ id })),
         },
@@ -175,10 +184,19 @@ router.patch('/:id', auth, isProjectOwner, async (req: AuthRequest, res: Respons
 // Delete one project
 router.delete('/:id', auth, isProjectOwner, async (req: AuthRequest, res: Response) => {
   try {
-    await prisma.project.delete({
+    const project = await prisma.project.update({
       where: { id: req.params.id },
+      data: {
+        deletedAt: new Date(),
+        autoDeleteAt: null,
+      },
     });
-    res.json({ message: 'Deleted project' });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Cannot find project' });
+    }
+
+    res.json({ message: 'Project moved to recycle state' });
   } catch (err: any) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return res.status(404).json({ message: 'Cannot find project' });

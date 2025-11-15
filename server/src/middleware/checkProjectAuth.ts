@@ -8,6 +8,7 @@ type OrganizationMember = { userId: string; role: 'OWNER' | 'ADMIN' | 'MEMBER' }
 export const projectAccessSelection = {
   id: true,
   ownerId: true,
+  deletedAt: true,
   members: {
     select: {
       id: true,
@@ -47,7 +48,7 @@ export const isOrganizationOwner = (
       )
   );
 
-  export const isOrganizationOwnerOrAdmin = (
+export const isOrganizationOwnerOrAdmin = (
   organization: { members: OrganizationMember[] } | null,
   userId?: string
 ) =>
@@ -72,7 +73,7 @@ export const checkProjectAuth = async (req: AuthRequest, res: Response, next: Ne
       select: projectAccessSelection,
     });
 
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
@@ -113,7 +114,7 @@ export const isProjectMember = async (req: AuthRequest, res: Response, next: Nex
       select: projectAccessSelection,
     });
 
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
@@ -150,7 +151,7 @@ export const isProjectOwner = async (req: AuthRequest, res: Response, next: Next
       select: projectAccessSelection,
     });
 
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 

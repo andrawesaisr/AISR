@@ -14,6 +14,7 @@ import organizationRoutes from './routes/organizations';
 import { auth } from './middleware/auth';
 import { verifyEmailConfig } from './utils/emailService';
 import prisma from './prismaClient';
+import { startProjectCleanupJob } from './jobs/projectCleanup';
 
 dotenv.config();
 
@@ -104,6 +105,7 @@ async function start() {
 }
 
 start();
+startProjectCleanupJob();
 
 const shutdownSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
 

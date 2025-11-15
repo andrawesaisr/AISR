@@ -101,6 +101,8 @@ model Project {
   organizationId String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+  autoDeleteAt   DateTime?
 
   owner        User         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   members      User[]       @relation("ProjectMembers")
@@ -111,6 +113,8 @@ model Project {
 
   @@index([ownerId])
   @@index([organizationId])
+  @@index([deletedAt])
+  @@index([autoDeleteAt])
 }
 
 model Task {

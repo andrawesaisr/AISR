@@ -74,6 +74,10 @@ export const canViewDocument = async (req: AuthRequest, res: Response, next: Nex
 
     const project = document.project;
 
+    if (project?.deletedAt) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
     if (project) {
       if (project.ownerId === userId) {
         return next();
@@ -115,6 +119,10 @@ export const canEditDocument = async (req: AuthRequest, res: Response, next: Nex
 
     const project = document.project;
 
+    if (project?.deletedAt) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
     if (project && isOrganizationOwner(project.organization, userId)) {
       return next();
     }
@@ -145,6 +153,10 @@ export const canDeleteDocument = async (req: AuthRequest, res: Response, next: N
     }
 
     const project = document.project;
+
+    if (project?.deletedAt) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
 
     if (project && isOrganizationOwner(project.organization, userId)) {
       return next();
@@ -179,7 +191,7 @@ export const validateDocumentProject = async (
     }
 
     const project = await fetchProjectById(projectId);
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 

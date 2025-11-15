@@ -49,7 +49,7 @@ export const isTaskMember = async (req: AuthRequest, res: Response, next: NextFu
 
     const project = task.project;
 
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
@@ -88,7 +88,7 @@ export const canEditTask = async (req: AuthRequest, res: Response, next: NextFun
 
     const project = task.project;
 
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
@@ -121,7 +121,7 @@ export const canCreateTask = async (req: AuthRequest, res: Response, next: NextF
     }
 
     const project = await fetchProjectById(projectId);
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
@@ -158,7 +158,7 @@ export const canViewProjectTasks = async (
     }
 
     const project = await fetchProjectById(projectId);
-    if (!project) {
+    if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Project not found' });
     }
 

@@ -82,6 +82,7 @@ router.get('/', auth, async (req: AuthRequest, res: Response) => {
 // Get one project
 router.get('/:id', auth, isProjectMember, async (req: AuthRequest, res: Response) => {
   try {
+    const projectCutOffDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     const project = await prisma.project.findUnique({
       where: { id: req.params.id },
       include: PROJECT_INCLUDE,
@@ -90,7 +91,16 @@ router.get('/:id', auth, isProjectMember, async (req: AuthRequest, res: Response
     if (!project || project.deletedAt) {
       return res.status(404).json({ message: 'Cannot find project' });
     }
-
+    if( new Date(project.createdAt) <= projectCutOffDate) {
+      await prisma.project.update({
+        where: {id : req.params.id},
+        data: {
+          deletedAt: new Date(),
+          autoDeleteAt: null,
+        }
+      })
+      return res.status(404).json({ message: 'sprint of this project has expired, contact the admin to get the data again' });
+    }
     res.json(project);
   } catch (err: any) {
     res.status(500).json({ message: err.message || 'Unable to fetch project' });

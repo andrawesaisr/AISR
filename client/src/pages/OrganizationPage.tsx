@@ -216,13 +216,13 @@ const OrganizationPage: React.FC = () => {
       </div>
 
       {/* Members Section */}
-      <div className="rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-soft">
+      <div className="rounded-3xl border border-neutral-300 bg-white/90 p-6 shadow-soft dark:border-neutral-700 dark:bg-neutral-900/90">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-18 font-semibold text-neutral-1000">
+            <h2 className="text-18 font-semibold text-neutral-1000 dark:text-neutral-0">
               Members ({stats.memberCount})
             </h2>
-            <p className="text-12 text-neutral-600">
+            <p className="text-12 text-neutral-600 dark:text-neutral-400">
               Manage access and keep everyone aligned on responsibilities.
             </p>
           </div>
@@ -231,7 +231,7 @@ const OrganizationPage: React.FC = () => {
           {currentOrganization.members.filter((member: any) => member.user).map((member: any) => (
             <div
               key={member.user._id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-100"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-neutral-600 dark:hover:bg-neutral-750"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-jira-500 to-status-purple text-13 font-semibold text-white">
@@ -239,12 +239,12 @@ const OrganizationPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-14 font-semibold text-neutral-1000">{member.user.username}</span>
+                    <span className="text-14 font-semibold text-neutral-1000 dark:text-neutral-0">{member.user.username}</span>
                     {getRoleIcon(member.role)}
                   </div>
-                  <p className="text-12 text-neutral-600">{member.user.email}</p>
+                  <p className="text-12 text-neutral-600 dark:text-neutral-300">{member.user.email}</p>
                   {member.user.jobTitle && (
-                    <p className="text-11 text-neutral-500">{member.user.jobTitle}</p>
+                    <p className="text-11 text-neutral-500 dark:text-neutral-400">{member.user.jobTitle}</p>
                   )}
                 </div>
               </div>
@@ -254,20 +254,20 @@ const OrganizationPage: React.FC = () => {
                     <select
                       value={member.role}
                       onChange={(e) => handleUpdateRole(member.user._id, e.target.value as 'admin' | 'member')}
-                      className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white"
+                      className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-0 dark:focus:bg-neutral-800"
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
                     </select>
                     <button
                       onClick={() => handleRemoveMember(member.user._id, member.user.username)}
-                      className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50"
+                      className="rounded-xl border border-red-200 p-2 text-status-red transition hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
-                  <span className="pill bg-neutral-200 text-neutral-700 capitalize">
+                  <span className="pill bg-neutral-200 text-neutral-700 capitalize dark:bg-neutral-700 dark:text-neutral-200">
                     {member.role}
                   </span>
                 )}

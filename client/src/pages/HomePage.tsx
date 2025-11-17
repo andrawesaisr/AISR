@@ -7,9 +7,13 @@ import {
   BoltIcon,
   UserGroupIcon,
   ShieldCheckIcon,
+  SunIcon as Sun,
+  MoonIcon as Moon,
+  ComputerDesktopIcon as Monitor,
   FlagIcon as TargetIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
+import { useTheme } from '../context/ThemeContext';
 
 const HomePage: React.FC = () => {
   const features = [
@@ -53,7 +57,11 @@ const HomePage: React.FC = () => {
       description: 'Granular roles, SSO, and audit trails ensure every data point stays protected.',
     },
   ];
-
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+    const ThemeGlyph = theme === 'system' ? Monitor : resolvedTheme === 'dark' ? Moon : Sun;
+const quickToggleLabel =
+    nextTheme === 'dark' ? 'Switch to dark mode' : 'Switch to light mode';
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-1000 transition-colors duration-200 dark:bg-neutral-1000 dark:text-neutral-0">
       <header className="sticky top-0 z-40 border-b border-neutral-300 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
@@ -74,6 +82,17 @@ const HomePage: React.FC = () => {
               Get started
             </Link>
           </nav>
+         <button
+          type="button"
+          className={`sidebar-link  `}
+          onClick={() => setTheme(nextTheme)}
+          title={quickToggleLabel}
+        >
+          <span className={`flex items-center gap-2 `}>
+            <ThemeGlyph className="w-4 h-4" />
+            <span className={'text-14'}>Theme</span>
+          </span>
+          </button>
         </div>
       </header>
 

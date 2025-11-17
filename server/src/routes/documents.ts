@@ -51,39 +51,26 @@ const DOCUMENT_INCLUDE = {
   },
 };
 
-// Get all documents for a user
+// Get all documents for a organization (only organization members can access)
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
-    const where =
-      req.user?.role === 'admin'
-        ? undefined
-        : {
-            OR: [
-              { ownerId: req.userId },
-              {
-                collaborators: {
-                  some: { id: req.userId },
-                },
-              },
-              { isPublic: true },
-              {
-                project: {
-                  organization: {
-                    members: {
-                      some: {
-                        userId: req.userId,
-                      },
-                    },
-                  },
-                },
-              },
-            ],
-          };
+const organizationId = await prisma.organizationMember.findFirst({
+  where: { userId: req.userId },
+  select: { organizationId: true },
+});
 
+const organizationMembers = await prisma.organizationMember.findMany({
+  where: { organizationId: organizationId?.organizationId },
+  select: { userId: true },
+});
+
+const where = {
+  ownerId: { in: organizationMembers.map((member) => member.userId) }
+}
     const documents = await prisma.document.findMany({
       where,
       include: DOCUMENT_INCLUDE,

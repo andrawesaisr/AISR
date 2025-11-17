@@ -57,7 +57,7 @@ interface OrganizationContextType {
   deleteOrganization: (id: string) => Promise<void>;
   inviteMember: (organizationId: string, email: string, role: 'ADMIN' | 'MEMBER') => Promise<{ message: string; inviteLink?: string }>;
   removeMember: (organizationId: string, userId: string) => Promise<void>;
-  updateMemberRole: (organizationId: string, userId: string, role: 'admin' | 'member') => Promise<void>;
+  updateMemberRole: (organizationId: string, userId: string, role: 'ADMIN' | 'MEMBER') => Promise<void>;
   cancelInvitation: (organizationId: string, invitationId: string) => Promise<void>;
   acceptInvitation: (token: string) => Promise<Organization>;
   getInvitationDetails: (token: string) => Promise<any>;
@@ -157,7 +157,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     await fetchOrganization(organizationId);
   };
 
-  const updateMemberRole = async (organizationId: string, userId: string, role: 'admin' | 'member') => {
+  const updateMemberRole = async (organizationId: string, userId: string, role: 'ADMIN' | 'MEMBER') => {
     await axios.patch(
       `${API_URL}/organizations/${organizationId}/members/${userId}/role`,
       { role },

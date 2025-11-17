@@ -72,6 +72,25 @@ export const canViewDocument = async (req: AuthRequest, res: Response, next: Nex
       return next();
     }
 
+    // Check if user and document owner are in the same organization
+    const userOrganization = await prisma.organizationMember.findFirst({
+      where: { userId },
+      select: { organizationId: true },
+    });
+
+    if (userOrganization) {
+      const ownerInSameOrg = await prisma.organizationMember.findFirst({
+        where: {
+          userId: document.ownerId,
+          organizationId: userOrganization.organizationId,
+        },
+      });
+
+      if (ownerInSameOrg) {
+        return next();
+      }
+    }
+
     const project = document.project;
 
     if (project?.deletedAt) {

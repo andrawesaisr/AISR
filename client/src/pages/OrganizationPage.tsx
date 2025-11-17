@@ -106,7 +106,7 @@ const OrganizationPage: React.FC = () => {
     }
   };
 
-  const handleUpdateRole = async (userId: string, newRole: 'admin' | 'member') => {
+  const handleUpdateRole = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => {
     if (!id) return;
     try {
       await updateMemberRole(id, userId, newRole);
@@ -249,15 +249,15 @@ const OrganizationPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {canManageMembers && member.role !== 'owner' ? (
+                {canManageMembers && member.role !== 'OWNER' ? (
                   <>
                     <select
                       value={member.role}
-                      onChange={(e) => handleUpdateRole(member.user._id, e.target.value as 'admin' | 'member')}
+                      onChange={(e) => handleUpdateRole(member.user._id, e.target.value as 'ADMIN' | 'MEMBER')}
                       className="input-field w-auto rounded-xl border-2 border-neutral-300 bg-neutral-100 text-12 font-semibold uppercase tracking-wide focus:bg-white dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-0 dark:focus:bg-neutral-800"
                     >
-                      <option value="member">Member</option>
-                      <option value="admin">Admin</option>
+                      <option value="MEMBER">Member</option>
+                      <option value="ADMIN">Admin</option>
                     </select>
                     <button
                       onClick={() => handleRemoveMember(member.user._id, member.user.username)}

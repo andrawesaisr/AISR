@@ -7,6 +7,7 @@ import {
   canCreateTask,
   canViewProjectTasks,
 } from '../middleware/checkTaskAuth';
+import { generateTaskSuggestions } from '../utils/geminiService';
 
 const router = Router();
 
@@ -73,6 +74,71 @@ const mapTaskType = (type: string): any => {
   };
   return typeMap[type] || 'TASK';
 };
+
+// Generate task suggestions using AI
+router.post(
+  '/generate',
+  auth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { description, projectId } = req.body;
+
+      if (!description || typeof description !== 'string' || description.trim().length === 0) {
+        return res.status(400).json({ message: 'Description is required' });
+      }
+
+      if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Project ID is required' });
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: {
+          members: true,
+          organization: {
+            include: {
+              members: true,
+            },
+          },
+        },
+      });
+
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+
+      const isOwner = project.ownerId === req.userId;
+      const isProjectMember = project.members.some((m: any) => {
+        const memberId = typeof m === 'string' ? m : m.id;
+        return memberId === req.userId;
+      });
+      const isOrgMember = project.organization?.members.some(
+        (m: any) => m.userId === req.userId
+      );
+
+      if (!isOwner && !isProjectMember && !isOrgMember) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const projectContext = `Project: ${project.name}. ${project.description || ''}`;
+      const suggestions = await generateTaskSuggestions(description, projectContext);
+
+      res.json({ tasks: suggestions });
+    } catch (err: any) {
+      console.error('Error generating tasks:', err);
+
+      if (err.message?.includes('not configured')) {
+        return res.status(503).json({
+          message: 'AI task generation is not available. Please configure GEMINI_API_KEY.',
+        });
+      }
+
+      res.status(500).json({
+        message: err.message || 'Failed to generate task suggestions',
+      });
+    }
+  }
+);
 
 // Get all tasks for a project
 router.get(

@@ -13,6 +13,7 @@ import sprintRoutes from './routes/sprints';
 import organizationRoutes from './routes/organizations';
 import { auth } from './middleware/auth';
 import { verifyEmailConfig } from './utils/emailService';
+import { verifyGeminiConfig } from './utils/geminiService';
 import prisma from './prismaClient';
 import { startProjectCleanupJob } from './jobs/projectCleanup';
 
@@ -90,6 +91,7 @@ async function start() {
     await prisma.$connect();
     console.log('PostgreSQL connection established successfully');
     verifyEmailConfig();
+    verifyGeminiConfig();
 
     app.listen(port, () => {
       console.log(`Server is running on port: ${port}`);

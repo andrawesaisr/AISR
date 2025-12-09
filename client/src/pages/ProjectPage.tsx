@@ -14,6 +14,7 @@ import {
   ClockIcon,
   FolderIcon,
   UserGroupIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from '@dnd-kit/core';
@@ -24,6 +25,7 @@ import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
+import AITaskDrawer from '../components/AITaskDrawer';
 import { getErrorMessage } from '../utils/errors';
 
 const ProjectPage: React.FC = () => {
@@ -45,6 +47,7 @@ const ProjectPage: React.FC = () => {
   const [organizationMembers, setOrganizationMembers] = useState<any[]>([]);
   const [assignableUsers, setAssignableUsers] = useState<any[]>([]);
   const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [showAIDrawer, setShowAIDrawer] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -358,10 +361,20 @@ const ProjectPage: React.FC = () => {
           'Add a brief description so teammates know what success looks like.'
         }
         actions={
-          <button onClick={() => setShowTaskModal(true)} className="btn-primary flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New task
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAIDrawer(true)}
+              className="btn-secondary flex items-center gap-2"
+              title="Generate tasks with AI"
+            >
+              <SparklesIcon className="h-4 w-4" />
+              AI Assistant
+            </button>
+            <button onClick={() => setShowTaskModal(true)} className="btn-primary flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New task
+            </button>
+          </div>
         }
       >
         <div className="flex flex-wrap items-center gap-2 text-11 text-neutral-600">
@@ -742,6 +755,14 @@ const ProjectPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AI Task Drawer */}
+      <AITaskDrawer
+        isOpen={showAIDrawer}
+        onClose={() => setShowAIDrawer(false)}
+        projectId={id!}
+        onTasksCreated={fetchTasks}
+      />
     </div>
   );
 };

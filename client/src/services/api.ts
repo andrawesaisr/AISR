@@ -109,6 +109,14 @@ export const deleteTask = async (id: string) => {
   return res.data;
 };
 
+export const generateTasks = async (data: {
+  description: string,
+  projectId: string
+}) => {
+  const res = await api.post('/tasks/generate', data);
+  return res.data;
+};
+
 // Documents
 export const getDocuments = async () => {
   const res = await api.get('/documents');

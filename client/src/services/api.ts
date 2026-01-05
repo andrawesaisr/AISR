@@ -70,6 +70,21 @@ export const createProject = async (project: { name: string, description: string
   return res.data;
 };
 
+export const updateProject = async (id: string, project: {
+  name?: string;
+  description?: string;
+  members?: string[];
+  organization?: string | null;
+}) => {
+  const res = await api.patch(`/projects/${id}`, project);
+  return res.data;
+};
+
+export const deleteProject = async (id: string) => {
+  const res = await api.delete(`/projects/${id}`);
+  return res.data;
+};
+
 export const getOrganization = async (id: string) => {
   const res = await api.get(`/organizations/${id}`);
   return res.data;

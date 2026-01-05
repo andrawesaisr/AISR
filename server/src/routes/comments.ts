@@ -63,9 +63,23 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Update a comment
+// Update a comment (only author can update)
 router.patch('/:id', auth, async (req: AuthRequest, res: Response) => {
   try {
+    // First verify the user owns this comment
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: req.params.id },
+      select: { authorId: true },
+    });
+
+    if (!existingComment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (existingComment.authorId !== req.userId) {
+      return res.status(403).json({ message: 'You can only edit your own comments' });
+    }
+
     const comment = await prisma.comment.update({
       where: { id: req.params.id },
       data: {
@@ -83,9 +97,23 @@ router.patch('/:id', auth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Delete a comment
+// Delete a comment (only author can delete)
 router.delete('/:id', auth, async (req: AuthRequest, res: Response) => {
   try {
+    // First verify the user owns this comment
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: req.params.id },
+      select: { authorId: true },
+    });
+
+    if (!existingComment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (existingComment.authorId !== req.userId) {
+      return res.status(403).json({ message: 'You can only delete your own comments' });
+    }
+
     await prisma.comment.delete({
       where: { id: req.params.id },
     });

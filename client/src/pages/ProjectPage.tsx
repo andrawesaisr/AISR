@@ -15,12 +15,14 @@ import {
   FolderIcon,
   UserGroupIcon,
   SparklesIcon,
+  PencilIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getProject, getTasksForProject, createTask, updateTask, deleteTask, getCommentsForTask, createComment, getOrganization } from '../services/api';
+import { getProject, getTasksForProject, createTask, updateTask, deleteTask, getCommentsForTask, createComment, getOrganization, updateProject, deleteProject } from '../services/api';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
@@ -48,6 +50,12 @@ const ProjectPage: React.FC = () => {
   const [assignableUsers, setAssignableUsers] = useState<any[]>([]);
   const [newTaskAssignee, setNewTaskAssignee] = useState('');
   const [showAIDrawer, setShowAIDrawer] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -224,6 +232,46 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const openEditModal = () => {
+    setEditName(project.name);
+    setEditDescription(project.description || '');
+    setShowEditModal(true);
+  };
+
+  const handleUpdateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const updated = await updateProject(id!, {
+        name: editName.trim(),
+        description: editDescription.trim(),
+      });
+      setProject({ ...project, ...updated });
+      setShowEditModal(false);
+      toast.success('Project updated!');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update project'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteProject(id!);
+      toast.success('Project deleted');
+      navigate('/projects');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to delete project'));
+      setIsDeleting(false);
+    }
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
@@ -362,6 +410,14 @@ const ProjectPage: React.FC = () => {
         }
         actions={
           <div className="flex gap-2">
+            <button
+              onClick={openEditModal}
+              className="btn-ghost flex items-center gap-2"
+              title="Edit project"
+            >
+              <Cog6ToothIcon className="h-4 w-4" />
+              Settings
+            </button>
             <button
               onClick={() => setShowAIDrawer(true)}
               className="btn-secondary flex items-center gap-2"
@@ -763,6 +819,134 @@ const ProjectPage: React.FC = () => {
         projectId={id!}
         onTasksCreated={fetchTasks}
       />
+
+      {/* Edit Project Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-neutral-200 px-6 py-5">
+              <h2 className="text-24 font-semibold text-neutral-1000">Project settings</h2>
+              <p className="mt-1 text-12 text-neutral-600">
+                Update project details or delete the project.
+              </p>
+            </div>
+            <form onSubmit={handleUpdateProject} className="space-y-6 px-6 py-6">
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="edit-name"
+                    className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                  >
+                    Project name *
+                  </label>
+                  <input
+                    id="edit-name"
+                    type="text"
+                    required
+                    className="input-field rounded-xl border-2 border-neutral-300 bg-neutral-100 focus:bg-white"
+                    placeholder="e.g., Q1 Marketing Campaign"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-description"
+                    className="mb-2 block text-12 font-semibold uppercase tracking-wide text-neutral-700"
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id="edit-description"
+                    className="input-field min-h-[100px] rounded-xl border-2 border-neutral-300 bg-neutral-100 py-3 focus:bg-white"
+                    placeholder="Describe what this project is about..."
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-14 font-medium text-status-red transition hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete project
+                </button>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={isSaving} className="btn-primary flex items-center gap-2">
+                    {isSaving ? (
+                      <>
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <PencilIcon className="h-4 w-4" />
+                        Save changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-6 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="h-7 w-7 text-status-red" />
+              </div>
+              <h3 className="mt-4 text-20 font-semibold text-neutral-1000">Delete project?</h3>
+              <p className="mt-2 text-14 text-neutral-600">
+                This will move <strong>"{project.name}"</strong> to trash. It will be permanently deleted after 14 days.
+                All tasks associated with this project will also be removed.
+              </p>
+              <div className="mt-6 flex justify-center gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="btn-secondary"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteProject}
+                  disabled={isDeleting}
+                  className="flex items-center gap-2 rounded-xl bg-status-red px-4 py-2 text-14 font-medium text-white transition hover:bg-red-600 disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Delete project
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

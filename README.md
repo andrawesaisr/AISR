@@ -154,6 +154,19 @@ aisr/
    EMAIL_PASS=your_email_password
    CLIENT_URL=http://localhost:3000
    ```
+   Optional: enable Sentry monitoring by adding:
+   ```env
+   SENTRY_BACKEND_DSN=your_server_sentry_dsn
+   SENTRY_TRACES_SAMPLE_RATE=0.2
+   SENTRY_PROFILES_SAMPLE_RATE=0
+   ```
+
+   Optional: control the project auto-cleanup job
+   ```env
+   PROJECT_AUTO_DELETE_ENABLED=true
+   PROJECT_AUTO_DELETE_CRON=0 3 * * *
+   PROJECT_AUTO_DELETE_TZ=UTC
+   ```
 
 4. **Build and start the server**
    ```bash
@@ -170,6 +183,14 @@ aisr/
    npm install
    ```
 
+   Create a `.env` file for the client (optional if you plan to enable Sentry):
+   ```env
+   SENTRY_DSN=your_frontend_sentry_dsn
+   SENTRY_ENVIRONMENT=development
+   SENTRY_TRACES_SAMPLE_RATE=0.2
+   SENTRY_PROFILES_SAMPLE_RATE=0
+   ```
+
 6. **Start the client**
    ```bash
    npm start
@@ -177,6 +198,15 @@ aisr/
    # Or build for production:
    npm run build
    ```
+
+### Observability (Sentry)
+- Frontend errors are captured automatically once `SENTRY_DSN` is set. Wrap any custom async logic with `Sentry.captureException` if you need manual reporting.
+- Backend routes forward exceptions to Sentry when `SENTRY_BACKEND_DSN` is configured. Unhandled promise rejections and process-level crashes are also reported.
+- Adjust `SENTRY_TRACES_SAMPLE_RATE` and `SENTRY_PROFILES_SAMPLE_RATE` (0–1) to control performance and profiling data volume.
+
+### Scheduled Cleanup
+- Every new project is scheduled for soft deletion 14 days after creation; the background job runs daily (default 03:00 UTC) and only marks records with `deletedAt`, never removes them permanently.
+- Tweak `PROJECT_AUTO_DELETE_CRON` or `PROJECT_AUTO_DELETE_TZ` to change the schedule, or set `PROJECT_AUTO_DELETE_ENABLED=false` to disable the job entirely.
 
 The application will be available at:
 - **Client**: http://localhost:3000
